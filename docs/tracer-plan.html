@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The mail tutor — tracer plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Petrona:ital,wght@0,500;0,650;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #eef3f4;
+      --sheet: #f7fbfb;
+      --ink: #17262c;
+      --muted: #3e5560;
+      --blue: #1d4f73;
+      --blue-soft: #d7e6ee;
+      --line: #c3d3db;
+      --stamp: #9f2d2d;
+      --pass: #1c6b45;
+      --focus: #0b6bcb;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Atkinson Hyperlegible", "Segoe UI", sans-serif;
+      font-size: 1.125rem;
+      line-height: 1.55;
+    }
+
+    .sheet {
+      max-width: 46rem;
+      margin: 2.5rem auto 4rem;
+      padding: 2.5rem 1.5rem 3rem;
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      border-left: 8px solid var(--blue);
+    }
+
+    header h1 {
+      margin: 0 0 0.75rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    header p {
+      max-width: 38rem;
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--muted);
+    }
+
+    h2 {
+      margin: 2.75rem 0 0.75rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: 1.85rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    h3 {
+      margin: 1.5rem 0 0.35rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 650;
+    }
+
+    p { margin: 0.75rem 0; max-width: 40rem; }
+
+    a { color: var(--blue); }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .diagram {
+      margin: 1.25rem 0 0.5rem;
+      overflow-x: auto;
+    }
+
+    svg { display: block; width: 100%; height: auto; }
+
+    .node { fill: #fff; stroke: var(--blue); stroke-width: 1.5; }
+    .node-quiet { fill: var(--blue-soft); stroke: var(--blue); stroke-width: 1.5; }
+    .node-grade { fill: #fff; stroke: var(--stamp); stroke-width: 1.75; }
+    .label { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 15px; fill: var(--ink); }
+    .small { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 13px; fill: var(--muted); }
+    .arrow { stroke: var(--blue); stroke-width: 1.5; fill: none; }
+
+    ol.steps { margin: 0.5rem 0 0; padding: 0; list-style: none; counter-reset: step; }
+    ol.steps li {
+      position: relative;
+      margin: 0;
+      padding: 0.85rem 0 0.85rem 3rem;
+      border-top: 1px solid var(--line);
+      max-width: 40rem;
+    }
+    ol.steps li:last-child { border-bottom: 1px solid var(--line); }
+    ol.steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.85rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-family: Petrona, Georgia, serif;
+      text-align: center;
+      line-height: 1.8rem;
+    }
+
+    .split { display: grid; gap: 1rem; margin-top: 1rem; }
+    @media (min-width: 720px) {
+      .split { grid-template-columns: 1fr 1fr; }
+    }
+
+    .rule {
+      margin: 0;
+      padding: 1rem 1rem 1rem 1.1rem;
+      background: #fff;
+      border-left: 4px solid var(--blue);
+    }
+    .rule.fail { border-left-color: var(--stamp); }
+    .rule.pass { border-left-color: var(--pass); }
+    .rule strong { display: block; font-family: Petrona, Georgia, serif; font-size: 1.25rem; font-weight: 650; margin-bottom: 0.25rem; }
+    .rule p { margin: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 1.05rem;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.7rem 0.6rem 0.7rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    th { font-weight: 700; }
+
+    ul { margin: 0.5rem 0; padding-left: 1.2rem; max-width: 40rem; }
+    li { margin: 0.35rem 0; }
+
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .sheet { margin: 0; border: 0; }
+    }
+  </style>
+</head>
+<body>
+  <article class="sheet">
+    <header>
+      <h1>A tutor that lives in the mailbox</h1>
+      <p>A student gets a problem by email, sends a zip of code back, and receives a pass or a fail. Every automatic grade includes feedback on what passed or what to fix. Pass moves them to a harder problem. Fail keeps them on the same one. There is no website.</p>
+    </header>
+
+    <h2>The route</h2>
+    <p>Amazon handles the mail. A small program, the clerk, decides what to do with each letter. The student’s code runs in a private room that can talk to Claude on Bedrock and to nothing else.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 720 860" role="img" aria-labelledby="diagramTitle diagramDesc">
+        <title id="diagramTitle">Mail and grading route</title>
+        <desc id="diagramDesc">A student emails a zip to Amazon SES. SES stores the raw letter in S3 and starts a Lambda clerk. The clerk reads the student row in DynamoDB and the Bedrock key in Secrets Manager, then runs the zip in a private Code Interpreter. That room calls Claude on Bedrock. SES sends the pass or fail back to the same inbox.</desc>
+
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#1d4f73"/>
+          </marker>
+        </defs>
+
+        <rect class="node" x="40" y="16" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="44" text-anchor="middle">Student’s mailbox</text>
+        <text class="small" x="190" y="66" text-anchor="middle">Any email address can join</text>
+
+        <line class="arrow" x1="190" y1="84" x2="190" y2="118" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="108">sends a letter</text>
+
+        <rect class="node" x="40" y="124" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="152" text-anchor="middle">Amazon SES</text>
+        <text class="small" x="190" y="174" text-anchor="middle">Receives and sends the mail</text>
+
+        <line class="arrow" x1="340" y1="158" x2="392" y2="158" marker-end="url(#arrowhead)"/>
+        <rect class="node-quiet" x="400" y="124" width="280" height="68" rx="2"/>
+        <text class="label" x="540" y="152" text-anchor="middle">S3</text>
+        <text class="small" x="540" y="174" text-anchor="middle">Keeps the raw letter</text>
+
+        <line class="arrow" x1="190" y1="192" x2="190" y2="232" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="220">starts the clerk</text>
+
+        <rect class="node" x="40" y="238" width="300" height="76" rx="2"/>
+        <text class="label" x="190" y="268" text-anchor="middle">Lambda, the clerk</text>
+        <text class="small" x="190" y="290" text-anchor="middle">Enroll, grade, or wait</text>
+
+        <line class="arrow" x1="340" y1="276" x2="392" y2="276" marker-end="url(#arrowhead)"/>
+        <rect class="node-quiet" x="400" y="242" width="280" height="68" rx="2"/>
+        <text class="label" x="540" y="270" text-anchor="middle">DynamoDB</text>
+        <text class="small" x="540" y="292" text-anchor="middle">One row per email address</text>
+
+        <line class="arrow" x1="340" y1="294" x2="392" y2="360" marker-end="url(#arrowhead)"/>
+        <rect class="node-quiet" x="400" y="326" width="280" height="68" rx="2"/>
+        <text class="label" x="540" y="354" text-anchor="middle">Secrets Manager</text>
+        <text class="small" x="540" y="376" text-anchor="middle">The Bedrock key</text>
+
+        <line class="arrow" x1="190" y1="314" x2="190" y2="414" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="370">runs the zip</text>
+
+        <rect class="node-grade" x="40" y="420" width="300" height="92" rx="2"/>
+        <text class="label" x="190" y="456" text-anchor="middle">Private grading room</text>
+        <text class="small" x="190" y="478" text-anchor="middle">Code Interpreter in a VPC</text>
+        <text class="small" x="190" y="496" text-anchor="middle">No public internet</text>
+
+        <line class="arrow" x1="190" y1="512" x2="190" y2="556" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="542">asks the model</text>
+
+        <rect class="node" x="40" y="562" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="590" text-anchor="middle">Claude Sonnet</text>
+        <text class="small" x="190" y="612" text-anchor="middle">Bedrock, private endpoint</text>
+
+        <line class="arrow" x1="190" y1="630" x2="190" y2="674" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="660">result comes back</text>
+
+        <rect class="node" x="40" y="680" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="708" text-anchor="middle">Reply on the same thread</text>
+        <text class="small" x="190" y="730" text-anchor="middle">Pass, fail, or try again</text>
+
+        <line class="arrow" x1="190" y1="748" x2="190" y2="792" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="778">SES sends it</text>
+
+        <rect class="node" x="40" y="798" width="300" height="48" rx="2"/>
+        <text class="label" x="190" y="828" text-anchor="middle">Back to that inbox</text>
+      </svg>
+    </div>
+
+    <h2>The loop</h2>
+    <ol class="steps">
+      <li>Someone emails <strong>tutor@</strong> your domain. The first letter creates that student. The reply is problem 1. A zip on that first letter is ignored.</li>
+      <li>The student replies with one zip of 10 MB or less. The zip holds <strong>main.py</strong>, at the top or inside one folder.</li>
+      <li>The clerk runs that program on five hidden tickets. The program calls Claude with the key we inject. The student never receives the key.</li>
+      <li>A checker, not Claude, marks the work. Four of the five tickets must pass.</li>
+      <li>The reply is plain text on the same thread. The first line is Pass or Fail, written by code. Claude only writes the explanation.</li>
+      <li>Fail keeps the same problem. Pass includes the next problem in that same email. After problem 3, the mail says the sequence is finished.</li>
+    </ol>
+
+    <h2>Pass and fail</h2>
+    <div class="split">
+      <div class="rule pass">
+        <strong>Pass</strong>
+        <p>The checker’s exit code is 0. The next instructions ride along in the same reply. The student moves forward one problem.</p>
+      </div>
+      <div class="rule fail">
+        <strong>Fail</strong>
+        <p>Any other exit code. The reply includes the checker’s notes, up to 8 KB. The same problem stays open.</p>
+      </div>
+    </div>
+    <p>Each attempt is graded on its own. The previous zip is thrown away. A second zip that arrives while a grade is running is discarded, and the reply asks them to send again after the result.</p>
+
+    <h2>The three problems</h2>
+    <p>All three are ticket triage. Each one adds a field. The tickets used for grading stay hidden. The email includes the instructions, the output shape, and one sample ticket.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>The program must return</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01 Classify</td>
+          <td>The ticket id, and a label: bug, billing, access, or other.</td>
+        </tr>
+        <tr>
+          <td>02 Route</td>
+          <td>Those, plus a priority (P1, P2, P3) and a queue. Bugs go to engineering, billing goes to billing, and the rest go to support.</td>
+        </tr>
+        <tr>
+          <td>03 Reply</td>
+          <td>Those, plus a short customer reply. It must contain the ticket id, stay under 80 words, and say “refund” only when the ticket does.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other. P1 means work is blocked or money is wrong. P3 is a how-to. P2 is the rest.</p>
+    <p>The label, priority, and queue must match the answer key. The reply is checked against the rules above, not against a canned paragraph. The program reads the ticket as JSON on standard input and prints one JSON object. It uses the Python standard library, calls Bedrock with a temperature of 0, and reads the key, model, and region from the environment.</p>
+
+    <h2>Letters that are not a grade</h2>
+    <ul>
+      <li>No zip: we send the current problem again.</li>
+      <li>More than one attachment: we ask for a single zip.</li>
+      <li>The same SES message arrives twice: we grade it once and reply once.</li>
+      <li>The grader times out, Bedrock errors, or the checker crashes: we say it was not graded. It is not a fail, and it does not use a daily attempt.</li>
+      <li>After 10 graded attempts in a UTC day: we stop and say the cap is hit. No grading room is started.</li>
+      <li>Mail after the last problem: we say the sequence is complete and do not grade.</li>
+    </ul>
+
+    <h2>Where each thing lives</h2>
+    <p>Everything is in <strong>us-east-1</strong>. You verify a domain and point its mail at SES. You create a long-term Bedrock API key in that same region and put it in Secrets Manager. The model starts as Claude Sonnet (<span lang="en">us.anthropic.claude-sonnet-4-6</span>).</p>
+    <ul>
+      <li>Problems live in this repo as folders: instructions, a rubric for the reply writer, a checker, and five hidden tickets.</li>
+      <li>The grading room is a Code Interpreter on a private network, with a Bedrock endpoint and no NAT gateway.</li>
+      <li>Each run is a new room, limited to 3 minutes, then closed.</li>
+      <li>Student rows live in DynamoDB: email, current problem, whether a grade is in flight, last result, and message ids already handled.</li>
+    </ul>
+
+    <h2>What this version leaves out</h2>
+    <ul>
+      <li>Slack, and any other channel besides email.</li>
+      <li>A website, a signup form, and an admin screen for uploading problems.</li>
+      <li>A model that picks a harder problem by reading the code. The order is fixed.</li>
+      <li>More skills after ticket triage. Those are more folders, added after one student finishes this ladder.</li>
+    </ul>
+
+    <footer>
+      <p>This is the tracer: prove the loop once, from the first email through a fail, a resend, a pass, and the next problem.</p>
+    </footer>
+  </article>
+</body>
+</html>
