@@ -181,12 +181,13 @@
     </header>
 
     <h2>The route</h2>
-    <p>Amazon handles the mail. A small program, the clerk, decides what to do with each letter. The student’s code runs in a private room that can talk to Claude on Bedrock and to nothing else.</p>
+    <p>Students write to <strong>tutor@aiguru.dev</strong>. Cloudflare holds the DNS for that domain. Amazon SES sends and receives the mail. Cloudflare Email Routing and Email Sending stay off, so they do not take the same MX and SPF records.</p>
+    <p>A small program, the clerk, decides what to do with each letter. Grading waits for a batch. The clerk opens one private door to Claude, grades whoever is waiting, and deletes the door. The student’s code can reach one Sonnet model through that door, and nothing else.</p>
 
     <div class="diagram">
-      <svg viewBox="0 0 720 860" role="img" aria-labelledby="diagramTitle diagramDesc">
+      <svg viewBox="0 0 720 1020" role="img" aria-labelledby="diagramTitle diagramDesc">
         <title id="diagramTitle">Mail and grading route</title>
-        <desc id="diagramDesc">A student emails a zip to Amazon SES. SES stores the raw letter in S3 and starts a Lambda clerk. The clerk reads the student row in DynamoDB and the Bedrock key in Secrets Manager, then runs the zip in a private Code Interpreter. That room calls Claude on Bedrock. SES sends the pass or fail back to the same inbox.</desc>
+        <desc id="diagramDesc">A student emails tutor@aiguru.dev. Cloudflare DNS points the domain at Amazon SES. SES stores the raw letter in S3 and starts a Lambda clerk. The clerk reads the student row in DynamoDB. For a batch, it opens a one-zone Bedrock door, runs each zip in a private Code Interpreter with no public internet, and deletes the door. The room can call only Claude Sonnet 4.6. SES sends the reply to the same inbox.</desc>
 
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
@@ -196,14 +197,14 @@
 
         <rect class="node" x="40" y="16" width="300" height="68" rx="2"/>
         <text class="label" x="190" y="44" text-anchor="middle">Student’s mailbox</text>
-        <text class="small" x="190" y="66" text-anchor="middle">Any email address can join</text>
+        <text class="small" x="190" y="66" text-anchor="middle">Writes to tutor@aiguru.dev</text>
 
         <line class="arrow" x1="190" y1="84" x2="190" y2="118" marker-end="url(#arrowhead)"/>
         <text class="small" x="202" y="108">sends a letter</text>
 
         <rect class="node" x="40" y="124" width="300" height="68" rx="2"/>
         <text class="label" x="190" y="152" text-anchor="middle">Amazon SES</text>
-        <text class="small" x="190" y="174" text-anchor="middle">Receives and sends the mail</text>
+        <text class="small" x="190" y="174" text-anchor="middle">Cloudflare DNS, SES mail</text>
 
         <line class="arrow" x1="340" y1="158" x2="392" y2="158" marker-end="url(#arrowhead)"/>
         <rect class="node-quiet" x="400" y="124" width="280" height="68" rx="2"/>
@@ -215,12 +216,12 @@
 
         <rect class="node" x="40" y="238" width="300" height="76" rx="2"/>
         <text class="label" x="190" y="268" text-anchor="middle">Lambda, the clerk</text>
-        <text class="small" x="190" y="290" text-anchor="middle">Enroll, grade, or wait</text>
+        <text class="small" x="190" y="290" text-anchor="middle">Enroll, queue, or reply</text>
 
         <line class="arrow" x1="340" y1="276" x2="392" y2="276" marker-end="url(#arrowhead)"/>
         <rect class="node-quiet" x="400" y="242" width="280" height="68" rx="2"/>
         <text class="label" x="540" y="270" text-anchor="middle">DynamoDB</text>
-        <text class="small" x="540" y="292" text-anchor="middle">One row per email address</text>
+        <text class="small" x="540" y="292" text-anchor="middle">Problem, cap, and message ids</text>
 
         <line class="arrow" x1="340" y1="294" x2="392" y2="360" marker-end="url(#arrowhead)"/>
         <rect class="node-quiet" x="400" y="326" width="280" height="68" rx="2"/>
@@ -228,42 +229,115 @@
         <text class="small" x="540" y="376" text-anchor="middle">The Bedrock key</text>
 
         <line class="arrow" x1="190" y1="314" x2="190" y2="414" marker-end="url(#arrowhead)"/>
-        <text class="small" x="202" y="370">runs the zip</text>
+        <text class="small" x="202" y="370">runs the batch</text>
 
         <rect class="node-grade" x="40" y="420" width="300" height="92" rx="2"/>
         <text class="label" x="190" y="456" text-anchor="middle">Private grading room</text>
-        <text class="small" x="190" y="478" text-anchor="middle">Code Interpreter in a VPC</text>
-        <text class="small" x="190" y="496" text-anchor="middle">No public internet</text>
+        <text class="small" x="190" y="478" text-anchor="middle">Code Interpreter, no internet</text>
+        <text class="small" x="190" y="496" text-anchor="middle">One new room per zip</text>
 
         <line class="arrow" x1="190" y1="512" x2="190" y2="556" marker-end="url(#arrowhead)"/>
-        <text class="small" x="202" y="542">asks the model</text>
+        <text class="small" x="202" y="542">through the door</text>
 
-        <rect class="node" x="40" y="562" width="300" height="68" rx="2"/>
-        <text class="label" x="190" y="590" text-anchor="middle">Claude Sonnet</text>
-        <text class="small" x="190" y="612" text-anchor="middle">Bedrock, private endpoint</text>
+        <rect class="node" x="40" y="562" width="300" height="92" rx="2"/>
+        <text class="label" x="190" y="598" text-anchor="middle">Bedrock door</text>
+        <text class="small" x="190" y="620" text-anchor="middle">One zone, this batch only</text>
+        <text class="small" x="190" y="638" text-anchor="middle">Deleted when the batch ends</text>
 
-        <line class="arrow" x1="190" y1="630" x2="190" y2="674" marker-end="url(#arrowhead)"/>
-        <text class="small" x="202" y="660">result comes back</text>
+        <rect class="node-quiet" x="400" y="562" width="280" height="92" rx="2"/>
+        <text class="label" x="540" y="598" text-anchor="middle">Idle costs nothing</text>
+        <text class="small" x="540" y="620" text-anchor="middle">No endpoint between batches</text>
+        <text class="small" x="540" y="638" text-anchor="middle">$0.01 per hour while open</text>
 
-        <rect class="node" x="40" y="680" width="300" height="68" rx="2"/>
-        <text class="label" x="190" y="708" text-anchor="middle">Reply on the same thread</text>
-        <text class="small" x="190" y="730" text-anchor="middle">Pass, fail, or try again</text>
+        <line class="arrow" x1="190" y1="654" x2="190" y2="698" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="684">one Sonnet</text>
 
-        <line class="arrow" x1="190" y1="748" x2="190" y2="792" marker-end="url(#arrowhead)"/>
-        <text class="small" x="202" y="778">SES sends it</text>
+        <rect class="node" x="40" y="704" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="732" text-anchor="middle">Claude Sonnet 4.6</text>
+        <text class="small" x="190" y="754" text-anchor="middle">The only model the door allows</text>
 
-        <rect class="node" x="40" y="798" width="300" height="48" rx="2"/>
-        <text class="label" x="190" y="828" text-anchor="middle">Back to that inbox</text>
+        <line class="arrow" x1="190" y1="772" x2="190" y2="816" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="802">result comes back</text>
+
+        <rect class="node" x="40" y="822" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="850" text-anchor="middle">Reply on the same thread</text>
+        <text class="small" x="190" y="872" text-anchor="middle">Pass, fail, or not graded</text>
+
+        <line class="arrow" x1="190" y1="890" x2="190" y2="934" marker-end="url(#arrowhead)"/>
+        <text class="small" x="202" y="920">SES sends it</text>
+
+        <rect class="node" x="40" y="940" width="300" height="48" rx="2"/>
+        <text class="label" x="190" y="970" text-anchor="middle">Back to that inbox</text>
       </svg>
     </div>
 
+    <h2>The door</h2>
+    <p>The door is an interface endpoint in one availability zone. It is created only when a batch has someone under the daily cap, and deleted when that batch ends. Deleting it stops the hourly charge. Opening it takes a few minutes, which is why grading is a batch and not one letter at a time.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 720 560" role="img" aria-labelledby="doorTitle doorDesc">
+        <title id="doorTitle">Batch grading and a zone failure</title>
+        <desc id="doorDesc">Letters under the daily cap wait. The clerk opens one door. Letters that arrive while it is opening join the batch. Each zip is graded in its own room. The door is then deleted and replies go out. If the zone fails, the door is deleted, grading pauses, and the clerk tries again, up to three times. After the third failure the unfinished letters are not graded, the attempt is not counted, and the door is still deleted.</desc>
+        <defs>
+          <marker id="arrowhead-door" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#1d4f73"/>
+          </marker>
+        </defs>
+
+        <rect class="node" x="40" y="16" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="44" text-anchor="middle">Letters under the cap</text>
+        <text class="small" x="190" y="66" text-anchor="middle">A capped student does not open it</text>
+
+        <line class="arrow" x1="190" y1="84" x2="190" y2="118" marker-end="url(#arrowhead-door)"/>
+
+        <rect class="node" x="40" y="124" width="300" height="84" rx="2"/>
+        <text class="label" x="190" y="156" text-anchor="middle">Open the door</text>
+        <text class="small" x="190" y="178" text-anchor="middle">One zone, a few minutes</text>
+        <text class="small" x="190" y="196" text-anchor="middle">New letters join this batch</text>
+
+        <line class="arrow" x1="340" y1="166" x2="392" y2="166" marker-end="url(#arrowhead-door)"/>
+        <line class="arrow" x1="190" y1="208" x2="190" y2="248" marker-end="url(#arrowhead-door)"/>
+
+        <rect class="node-grade" x="40" y="254" width="300" height="84" rx="2"/>
+        <text class="label" x="190" y="286" text-anchor="middle">Grade each room</text>
+        <text class="small" x="190" y="308" text-anchor="middle">Five hidden tickets</text>
+        <text class="small" x="190" y="326" text-anchor="middle">Three minutes, then close the room</text>
+
+        <polyline class="arrow" points="340,296 372,296 372,200 398,200" marker-end="url(#arrowhead-door)"/>
+        <line class="arrow" x1="190" y1="338" x2="190" y2="378" marker-end="url(#arrowhead-door)"/>
+
+        <rect class="node" x="40" y="384" width="300" height="68" rx="2"/>
+        <text class="label" x="190" y="412" text-anchor="middle">Delete the door</text>
+        <text class="small" x="190" y="434" text-anchor="middle">The hourly charge stops</text>
+
+        <line class="arrow" x1="190" y1="452" x2="190" y2="492" marker-end="url(#arrowhead-door)"/>
+
+        <rect class="node" x="40" y="498" width="300" height="48" rx="2"/>
+        <text class="label" x="190" y="528" text-anchor="middle">Replies go out</text>
+
+        <rect class="node-quiet" x="400" y="124" width="280" height="84" rx="2"/>
+        <text class="label" x="540" y="156" text-anchor="middle">Zone failed</text>
+        <text class="small" x="540" y="178" text-anchor="middle">Delete the door and pause</text>
+        <text class="small" x="540" y="196" text-anchor="middle">One minute, then two</text>
+
+        <rect class="node-grade" x="400" y="254" width="280" height="84" rx="2"/>
+        <text class="label" x="540" y="286" text-anchor="middle">After three tries</text>
+        <text class="small" x="540" y="308" text-anchor="middle">Not graded</text>
+        <text class="small" x="540" y="326" text-anchor="middle">The attempt is not counted</text>
+
+        <line class="arrow" x1="540" y1="208" x2="540" y2="248" marker-end="url(#arrowhead-door)"/>
+        <line class="arrow" x1="400" y1="296" x2="340" y2="418" marker-end="url(#arrowhead-door)"/>
+      </svg>
+    </div>
+    <p>A grade that already finished still counts. A second zip from a student whose room is already running is discarded. The reply asks them to send again after the result.</p>
+
     <h2>The loop</h2>
     <ol class="steps">
-      <li>Someone emails <strong>tutor@</strong> your domain. The first letter creates that student. The reply is problem 1. A zip on that first letter is ignored.</li>
+      <li>Someone emails <strong>tutor@aiguru.dev</strong>. The first letter creates that student. The reply is problem 1. A zip on that first letter is ignored.</li>
       <li>The student replies with one zip of 10 MB or less. The zip holds <strong>main.py</strong>, at the top or inside one folder.</li>
-      <li>The clerk runs that program on five hidden tickets. The program calls Claude with the key we inject. The student never receives the key.</li>
+      <li>The zip waits for the next batch. The clerk opens the door, runs that program on five hidden tickets, and shuts the door when the batch is done. The program calls Claude with the key we inject. The student never receives the key.</li>
       <li>A checker, not Claude, marks the work. Four of the five tickets must pass.</li>
-      <li>The reply is plain text on the same thread. The first line is Pass or Fail, written by code. Claude only writes the explanation.</li>
+      <li>The reply is plain text on the same thread. The first line is Pass, Fail, or Not graded, written by code. Claude only writes the explanation on a pass or a fail.</li>
       <li>Fail keeps the same problem. Pass includes the next problem in that same email. After problem 3, the mail says the sequence is finished.</li>
     </ol>
 
@@ -278,7 +352,7 @@
         <p>Any other exit code. The reply includes the checker’s notes, up to 8 KB. The same problem stays open.</p>
       </div>
     </div>
-    <p>Each attempt is graded on its own. The previous zip is thrown away. A second zip that arrives while a grade is running is discarded, and the reply asks them to send again after the result.</p>
+    <p>Each attempt is graded on its own. The previous zip is thrown away.</p>
 
     <h2>The three problems</h2>
     <p>All three are ticket triage. Each one adds a field. The tickets used for grading stay hidden. The email includes the instructions, the output shape, and one sample ticket.</p>
@@ -313,18 +387,22 @@
       <li>More than one attachment: we ask for a single zip.</li>
       <li>The same SES message arrives twice: we grade it once and reply once.</li>
       <li>The grader times out, Bedrock errors, or the checker crashes: we say it was not graded. It is not a fail, and it does not use a daily attempt.</li>
-      <li>After 10 graded attempts in a UTC day: we stop and say the cap is hit. No grading room is started.</li>
+      <li>The zone fails: we delete the door, pause, and try again, up to three times. After that, unfinished letters are not graded and do not use a daily attempt. A pass or a fail that already finished still counts.</li>
+      <li>After 10 graded attempts in a UTC day: we stop and say the cap is hit. No grading room is started, and a batch of only capped students does not open the door.</li>
       <li>Mail after the last problem: we say the sequence is complete and do not grade.</li>
     </ul>
 
     <h2>Where each thing lives</h2>
-    <p>Everything is in <strong>us-east-1</strong>. You verify a domain and point its mail at SES. You create a long-term Bedrock API key in that same region and put it in Secrets Manager. The model starts as Claude Sonnet (<span lang="en">us.anthropic.claude-sonnet-4-6</span>).</p>
+    <p>Everything is in <strong>us-east-1</strong>. DNS for <strong>aiguru.dev</strong> stays at Cloudflare. The MX record points at SES, and SES sends the replies. Bounces use <strong>bounce.aiguru.dev</strong>. A long-term Bedrock key for the room sits in Secrets Manager. The model is Claude Sonnet 4.6 (<span lang="en">us.anthropic.claude-sonnet-4-6</span>).</p>
     <ul>
       <li>Problems live in this repo as folders: instructions, a rubric for the reply writer, a checker, and five hidden tickets.</li>
-      <li>The grading room is a Code Interpreter on a private network, with a Bedrock endpoint and no NAT gateway.</li>
-      <li>Each run is a new room, limited to 3 minutes, then closed.</li>
-      <li>Student rows live in DynamoDB: email, current problem, whether a grade is in flight, last result, and message ids already handled.</li>
+      <li>The grading room is a Code Interpreter on a private network, with no NAT gateway and no public internet.</li>
+      <li>The door is one interface endpoint, in one subnet, with private DNS. The room’s role may call this Sonnet profile and the same foundation model in us-east-1, us-east-2, and us-west-2, because the profile routes across those three. The door itself accepts only the profile and the us-east-1 model, and only from this account. The calls are invoke and converse, including the streaming forms.</li>
+      <li>Each zip gets a new room, limited to 3 minutes, then closed. The door is shared by the batch and deleted at the end.</li>
+      <li>While the door exists, AWS charges $0.01 per hour for that one zone. A door left up for a month is about $7.30. A short batch is a fraction of a cent, plus $0.01 per gigabyte through the door.</li>
+      <li>Student rows live in DynamoDB: email, current problem, whether a grade is in flight, graded attempts for the UTC day, last result, and message ids already handled.</li>
     </ul>
+    <p>Until SES production access is granted, a reply can go only to a verified address, the SES mailbox simulator, or an address at a domain this account has already verified.</p>
 
     <h2>What this version leaves out</h2>
     <ul>
@@ -332,6 +410,9 @@
       <li>A website, a signup form, and an admin screen for uploading problems.</li>
       <li>A model that picks a harder problem by reading the code. The order is fixed.</li>
       <li>More skills after ticket triage. Those are more folders, added after one student finishes this ladder.</li>
+      <li>A second availability zone. Add it when real students are on the ladder. Until then a dead zone pauses grading, and after three tries the letter is not graded.</li>
+      <li>Leaving the Bedrock door open between batches.</li>
+      <li>Sending or receiving the mail through Cloudflare. Cloudflare is DNS only.</li>
     </ul>
 
     <footer>
