@@ -31,7 +31,7 @@ The code archive attached to a letter.
 _Avoid_: attempt
 
 **Submission**:
-A letter whose zip has been accepted for grading.
+A letter whose zip has been accepted for grading. A student has at most one in a batch.
 _Avoid_: attempt
 
 **Reply**:
@@ -51,6 +51,10 @@ _Avoid_: sequence, course, track
 **Checker**:
 The tutor's judge of a submission.
 _Avoid_: model
+
+**Model**:
+The language model that writes the note. The student's code may call it.
+_Avoid_: checker
 
 ## Grading
 
