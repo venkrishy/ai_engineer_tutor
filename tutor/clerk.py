@@ -11,19 +11,30 @@ from dataclasses import dataclass, field
 
 from tutor.grading import Door, Room
 
-FIRST_ASSIGNMENT = "Classify"
+@dataclass(frozen=True)
+class Assignment:
+    name: str
+    instructions: str
 
-CLASSIFY_REPLY = "\n".join(
-    [
-        "Classify",
-        "",
-        "Read one ticket as JSON and print one JSON object with the ticket id and a label: bug, billing, access, or other.",
-        "",
-        "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
-        "",
-        "Sample ticket:",
-        '{"id": "T-100", "subject": "I was charged twice", "body": "My invoice shows two payments for the same month."}',
-    ]
+    @property
+    def body(self) -> str:
+        return f"{self.name}\n\n{self.instructions}"
+
+
+LADDER = (
+    Assignment(
+        name="Classify",
+        instructions="\n".join(
+            [
+                "Read one ticket as JSON and print one JSON object with the ticket id and a label: bug, billing, access, or other.",
+                "",
+                "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
+                "",
+                "Sample ticket:",
+                '{"id": "T-100", "subject": "I was charged twice", "body": "My invoice shows two payments for the same month."}',
+            ]
+        ),
+    ),
 )
 
 
@@ -65,13 +76,16 @@ def receive(
     del door, room
     replies: list[Reply] = []
     for letter in letters:
+        if any(
+            letter.message_id in existing.handled_message_ids for existing in cards.values()
+        ):
+            continue
         card = cards.get(letter.email)
         if card is None:
             card = StudentCard(email=letter.email)
             cards[letter.email] = card
-        if letter.message_id in card.handled_message_ids:
-            continue
+        assignment = LADDER[0]
         card.handled_message_ids.add(letter.message_id)
-        card.open_assignment = FIRST_ASSIGNMENT
-        replies.append(Reply(letter.email, letter.message_id, CLASSIFY_REPLY))
+        card.open_assignment = assignment.name
+        replies.append(Reply(letter.email, letter.message_id, assignment.body))
     return replies

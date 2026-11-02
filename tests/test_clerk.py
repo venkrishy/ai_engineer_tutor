@@ -91,6 +91,24 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(list(cards), ["a@example.com"])
         self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
 
+    def test_the_same_message_id_from_another_address_does_not_create_a_second_student(self):
+        cards: dict = {}
+        receive(
+            [Letter("a@example.com", "m1")],
+            cards,
+            door=DoorThatMustStayShut(),
+            room=RoomThatMustStayShut(),
+        )
+        second = receive(
+            [Letter("b@example.com", "m1")],
+            cards,
+            door=DoorThatMustStayShut(),
+            room=RoomThatMustStayShut(),
+        )
+
+        self.assertEqual(second, [])
+        self.assertEqual(list(cards), ["a@example.com"])
+
 
 if __name__ == "__main__":
     unittest.main()
