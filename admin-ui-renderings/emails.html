@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email templates - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<h1>Email templates</h1><p class="sub">Edit the words students receive and see the email as they will. Text supports **bold**, `code` and lists.</p>
+<div class="tabs" id="tabs"><button data-k="welcome" class="on">Welcome</button><button data-k="steps">Steps</button><button data-k="next">What happens next</button></div>
+<div class="grid cols-2">
+  <div class="card"><h2>Editor</h2><textarea id="ed" aria-label="Template text"></textarea>
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn" id="save" type="button">Save</button><button class="btn ghost" id="test" type="button">Send test to me</button><span class="spacer"></span><a href="history.html">Version history</a></div></div>
+  <div class="card"><h2>Preview</h2>
+    <div class="mail"><div class="hd"><b>From:</b> Tutor &lt;tutor@example.dev&gt;<br><b>Subject:</b> Welcome to the course [triage]</div>
+    <div class="bd"><div class="status"><b>Your status:</b> Triage tickets, Level 1 of 3 (Classify). Graded tries left today: 5 of 5.</div><div id="pv"></div>
+    <div class="box">Sample prompt shown on the hints page, not in this email.</div></div></div></div>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("emails.html");
+const T = {
+  welcome: "**Welcome!** I am your AI engineering tutor.\n\nYou will build small programs with an AI coding tool, email them to me as a zip, and I will grade them.\n\n## Level 1: Classify incoming support tickets\nImagine a busy support desk. Tickets pile up: the site is slow, a card was charged twice, someone cannot log in. Your program tags each ticket.\n\n- Try it on your own first\n- Stuck? The hints page has a ready prompt",
+  steps: "## How to hand in your work\n1. Build `main.py` with any AI coding tool\n2. Zip it as `classify.zip`\n3. Reply to this email with the zip attached",
+  next: "## What happens next\nI grade your zip against **5 hidden tickets**. You pass with at least 4.\n\nYou get 5 graded tries per day.",
+};
+let key = "welcome"; const ed = document.getElementById("ed"), pv = document.getElementById("pv");
+function md(t) {
+  return esc(t).split("\n").map(l => l.startsWith("## ") ? `<h3>${l.slice(3)}</h3>` : /^[-\d]/.test(l) ? `<div>&bull; ${l.replace(/^(- |\d+\. )/, "")}</div>` : l ? `<p style="margin:6px 0">${l}</p>` : "")
+    .join("").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>");
+}
+function load() { ed.value = T[key]; draw(); }
+function draw() { pv.innerHTML = md(ed.value); }
+ed.oninput = () => { T[key] = ed.value; draw(); };
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b)); key = b.dataset.k; load();
+});
+document.getElementById("save").onclick = () => toast("Saved as a new version (demo).");
+document.getElementById("test").onclick = () => toast("Test email sent to the admin address (demo).");
+load();
+</script></body></html>

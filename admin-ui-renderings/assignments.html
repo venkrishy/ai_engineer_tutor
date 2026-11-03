@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assignments - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<div class="toolbar"><div><h1>Assignments</h1><p class="sub" style="margin:0">Assignments run in a fixed order. Each one is a ladder of levels.</p></div><span class="spacer"></span><a class="btn" href="upload.html">Upload new assignment</a></div>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="toolbar" style="margin:0"><div><h2 style="margin:0">1. Triage tickets</h2><span style="color:var(--muted);font-size:13px">id: triage</span></div><span class="spacer"></span><span class="pill good">Live: version 2</span><span class="pill">Order: first</span></div>
+  <div class="tablewrap"><table style="margin-top:10px"><thead><tr><th>Level</th><th>Title</th><th>Hidden tickets</th><th>Checker</th><th>Students here</th><th></th></tr></thead><tbody>
+    <tr><td>1 Classify</td><td>Classify incoming support tickets</td><td>5</td><td><span class="pill">built-in</span></td><td>3</td><td><a href="history.html">Edit text</a></td></tr>
+    <tr><td>2 Route</td><td>Route each ticket to a team</td><td>5</td><td><span class="pill">built-in</span></td><td>3</td><td><a href="history.html">Edit text</a></td></tr>
+    <tr><td>3 Reply</td><td>Write a first reply</td><td>5</td><td><span class="pill brand">custom checker</span></td><td>2</td><td><a href="history.html">Edit text</a></td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" style="opacity:.8">
+  <div class="toolbar" style="margin:0"><div><h2 style="margin:0">2. Summarize a thread <span class="pill warn">Draft</span></h2><span style="color:var(--muted);font-size:13px">id: summarize (uploaded, not yet live)</span></div><span class="spacer"></span><button class="btn ghost" id="go" type="button">Make live</button></div>
+  <p class="sub" style="margin:10px 0 0">Students move on to this assignment after finishing Triage tickets.</p>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>mountShell("assignments.html"); document.getElementById("go").onclick = () => toast("Draft promoted to live (demo).");</script></body></html>
