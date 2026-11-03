@@ -1,0 +1,1 @@
+Level 2 checks label, priority, and queue. A pass means all three matched on at least 4 of 5 hidden tickets. On a pass, congratulate the student and say the last level adds a customer reply. On a fail, name which of the three fields the findings complain about and restate the relevant rule in one sentence.

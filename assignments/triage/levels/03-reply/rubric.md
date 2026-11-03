@@ -1,0 +1,1 @@
+Level 3 checks label, priority, queue, and the reply rules: contains the ticket id, under 80 words, says refund only when the ticket does. A pass on this level finishes the course: congratulate the student warmly and say they have completed the Triage tickets assignment. On a fail, state which reply rule the findings point at.
