@@ -55,7 +55,7 @@ def verified_for(*identities):
 
 
 class MailSeamTest(unittest.TestCase):
-    def test_a_first_letter_from_the_testers_gmail_creates_the_student_and_replies_with_the_first_assignment(self):
+    def test_a_first_letter_from_the_testers_gmail_creates_the_student_and_replies_with_the_first_level(self):
         cards = {}
         mail = MailStandIn()
         deliver(
@@ -70,7 +70,7 @@ class MailSeamTest(unittest.TestCase):
         self.assertEqual(list(cards), [TESTER])
         card = cards[TESTER]
         self.assertEqual(card.email, TESTER)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertEqual(len(mail.sent), 1)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["From"])[1], TUTOR)

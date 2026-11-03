@@ -1,7 +1,7 @@
 """Turn a letter into one reply and the updated student card.
 
 A first letter creates the student and replies with a welcome, the first
-assignment, and step-by-step instructions for a first submission.
+level, and step-by-step instructions for a first submission.
 A zip on that letter is ignored. A later accepted zip is one submission:
 the tutor grades it through the batch and replies on the same thread.
 """
@@ -24,7 +24,7 @@ from tutor.grading import (
 )
 
 @dataclass(frozen=True)
-class Assignment:
+class Level:
     name: str
     instructions: str
 
@@ -36,7 +36,7 @@ class Assignment:
 HOW_IT_RUNS = "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else."
 
 LADDER = (
-    Assignment(
+    Level(
         name="Classify",
         instructions="\n".join(
             [
@@ -51,7 +51,7 @@ LADDER = (
             ]
         ),
     ),
-    Assignment(
+    Level(
         name="Route",
         instructions="\n".join(
             [
@@ -68,7 +68,7 @@ LADDER = (
             ]
         ),
     ),
-    Assignment(
+    Level(
         name="Reply",
         instructions="\n".join(
             [
@@ -136,8 +136,8 @@ WHAT_HAPPENS_NEXT = "\n".join(
 )
 
 
-def _first_letter_body(assignment: Assignment) -> str:
-    return "\n\n".join([WELCOME, assignment.body, FIRST_STEPS, WHAT_HAPPENS_NEXT])
+def _first_letter_body(level: Level) -> str:
+    return "\n\n".join([WELCOME, level.body, FIRST_STEPS, WHAT_HAPPENS_NEXT])
 
 
 @dataclass(frozen=True)
@@ -157,13 +157,21 @@ class Letter:
 @dataclass
 class StudentCard:
     email: str
-    open_assignment: str | None = None
+    assignment_id: str = "triage"
+    open_level: str | None = None
     in_flight: bool = False
     handled_message_ids: set[str] = field(default_factory=set)
     graded_tries_today: int = 0
     graded_day: date | None = None
     last_result: str | None = None
     finished: bool = False
+
+    @property
+    def level_index(self) -> int:
+        for index, level in enumerate(LADDER):
+            if level.name == self.open_level:
+                return index
+        return 0
 
 
 @dataclass(frozen=True)
@@ -182,7 +190,7 @@ _SECURITY_GROUP_ID = "sg-tutor"
 
 
 class Model(Protocol):
-    def note(self, assignment: str, result: str) -> str: ...
+    def note(self, level: str, result: str) -> str: ...
 
 
 class _RoomAdapter:
@@ -241,16 +249,16 @@ def _asks_for_a_single_zip(letter: Letter) -> bool:
     return not _main_py_is_at_the_top_or_in_one_folder(archive.filenames)
 
 
-def _open_assignment_body(card: StudentCard) -> str:
-    for assignment in LADDER:
-        if assignment.name == card.open_assignment:
-            return assignment.body
+def _open_level_body(card: StudentCard) -> str:
+    for level in LADDER:
+        if level.name == card.open_level:
+            return level.body
     return LADDER[0].body
 
 
-def _assignment_after(name: str) -> Assignment | None:
-    for index, assignment in enumerate(LADDER):
-        if assignment.name == name:
+def _level_after(name: str) -> Level | None:
+    for index, level in enumerate(LADDER):
+        if level.name == name:
             if index + 1 < len(LADDER):
                 return LADDER[index + 1]
             return None
@@ -291,7 +299,7 @@ def _reply_for_known_student(card: StudentCard, letter: Letter) -> str:
         return "The ladder is finished."
     if _asks_for_a_single_zip(letter):
         return "Send a single zip."
-    return _open_assignment_body(card)
+    return _open_level_body(card)
 
 
 _SEND_AGAIN = "Send that zip again after the result."
@@ -307,25 +315,25 @@ def _bodies_for_results(
 ) -> dict[str, str]:
     by_id = {item.message_id: item for item in result.items}
     bodies: dict[str, str] = {}
-    for letter, assignment_name in submissions:
+    for letter, level_name in submissions:
         item = by_id[letter.message_id]
         card = cards[letter.email]
         _remember_quota(card, quotas[letter.email])
         if item.outcome is Outcome.PASS:
             card.last_result = "pass"
-            note = model.note(assignment_name, "pass") if model is not None else ""
-            nxt = _assignment_after(assignment_name)
+            note = model.note(level_name, "pass") if model is not None else ""
+            nxt = _level_after(level_name)
             if nxt is None:
                 card.finished = True
                 trailer = "The ladder is finished."
             else:
-                card.open_assignment = nxt.name
+                card.open_level = nxt.name
                 trailer = nxt.body
             parts = ["Pass", note, trailer]
             bodies[letter.message_id] = "\n\n".join(part for part in parts if part)
         elif item.outcome is Outcome.FAIL:
             card.last_result = "fail"
-            note = model.note(assignment_name, "fail") if model is not None else ""
+            note = model.note(level_name, "fail") if model is not None else ""
             parts = [
                 "Fail",
                 note,
@@ -379,17 +387,17 @@ def receive(
         if card is None:
             card = StudentCard(email=letter.email)
             cards[letter.email] = card
-            assignment = LADDER[0]
+            level = LADDER[0]
             card.handled_message_ids.add(letter.message_id)
-            card.open_assignment = assignment.name
+            card.open_level = level.name
             ordered.append(letter)
-            bodies[letter.message_id] = _first_letter_body(assignment)
+            bodies[letter.message_id] = _first_letter_body(level)
             return None
         if not card.finished and _is_accepted_zip(letter):
             card.handled_message_ids.add(letter.message_id)
             ordered.append(letter)
             claimed.add(letter.email)
-            submissions.append((letter, card.open_assignment or LADDER[0].name))
+            submissions.append((letter, card.open_level or LADDER[0].name))
             quotas.setdefault(letter.email, _quota_for(card, today))
             return Submission(letter.email, letter.message_id)
         card.handled_message_ids.add(letter.message_id)

@@ -106,8 +106,8 @@ class FixedNote:
         self.text = text
         self.calls = []
 
-    def note(self, assignment, result):
-        self.calls.append((assignment, result))
+    def note(self, level, result):
+        self.calls.append((level, result))
         return self.text
 
 
@@ -150,7 +150,7 @@ REPLY_BODY = "\n".join(
 
 
 class ClerkTest(unittest.TestCase):
-    def test_a_first_letter_creates_the_student_and_replies_with_the_first_assignment(self):
+    def test_a_first_letter_creates_the_student_and_replies_with_the_first_level(self):
         cards: dict = {}
         replies = receive(
             [Letter("a@example.com", "m1")],
@@ -171,7 +171,7 @@ class ClerkTest(unittest.TestCase):
         )
         card = cards["a@example.com"]
         self.assertEqual(card.email, "a@example.com")
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
         self.assertEqual(list(cards), ["a@example.com"])
 
@@ -186,7 +186,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, FIRST_LETTER_BODY)
         self.assertFalse(cards["a@example.com"].in_flight)
-        self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["a@example.com"].open_level, "Classify")
 
     def test_the_same_message_id_creates_one_student_and_one_reply(self):
         cards: dict = {}
@@ -207,7 +207,7 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(len(first), 1)
         self.assertEqual(second, [])
         self.assertEqual(list(cards), ["a@example.com"])
-        self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["a@example.com"].open_level, "Classify")
 
     def test_the_same_message_id_from_another_address_does_not_create_a_second_student(self):
         cards: dict = {}
@@ -231,7 +231,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         replies = receive(
@@ -246,7 +246,7 @@ class ClerkTest(unittest.TestCase):
             [("a@example.com", "m2", "Send a single zip.")],
         )
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 0)
         self.assertEqual(card.handled_message_ids, {"m2"})
@@ -255,7 +255,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=3,
             )
         }
@@ -268,7 +268,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "Send a single zip.")
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 3)
 
@@ -276,7 +276,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         replies = receive(
@@ -290,13 +290,13 @@ class ClerkTest(unittest.TestCase):
         card = cards["a@example.com"]
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 0)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
 
     def test_a_zip_with_main_py_inside_a_single_folder_is_graded(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         room = PassingRoom(cards)
@@ -312,7 +312,7 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(replies[0].body.splitlines()[0], "Pass")
         self.assertEqual(room.graded, ["m2"])
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
         self.assertEqual(card.graded_tries_today, 1)
         self.assertFalse(card.in_flight)
 
@@ -320,7 +320,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         replies = receive(
@@ -339,7 +339,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         replies = receive(
@@ -354,11 +354,11 @@ class ClerkTest(unittest.TestCase):
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 0)
 
-    def test_a_letter_with_no_zip_receives_the_open_assignment_again(self):
+    def test_a_letter_with_no_zip_receives_the_open_level_again(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=2,
             )
         }
@@ -374,15 +374,15 @@ class ClerkTest(unittest.TestCase):
             [("a@example.com", "m2", CLASSIFY_BODY)],
         )
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 2)
 
-    def test_a_letter_with_no_zip_at_the_daily_cap_receives_the_open_assignment(self):
+    def test_a_letter_with_no_zip_at_the_daily_cap_receives_the_open_level(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=10,
             )
         }
@@ -396,14 +396,14 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(replies[0].body, CLASSIFY_BODY)
         card = cards["a@example.com"]
         self.assertEqual(card.graded_tries_today, 10)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
 
     def test_a_finished_student_with_no_zip_hears_the_ladder_is_finished(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 finished=True,
             )
         }
@@ -419,13 +419,13 @@ class ClerkTest(unittest.TestCase):
         self.assertTrue(card.finished)
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 0)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
 
     def test_a_finished_student_with_a_rejected_zip_hears_the_ladder_is_finished(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 finished=True,
                 graded_tries_today=4,
             )
@@ -442,7 +442,7 @@ class ClerkTest(unittest.TestCase):
         self.assertTrue(card.finished)
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 4)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
 
     def test_a_rejected_zip_on_the_first_letter_is_ignored(self):
         cards: dict = {}
@@ -455,16 +455,16 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, FIRST_LETTER_BODY)
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
         self.assertEqual(card.graded_tries_today, 0)
         self.assertEqual(list(cards), ["a@example.com"])
 
-    def test_an_accepted_zip_is_graded_pass_and_the_next_assignment_rides_along(self):
+    def test_an_accepted_zip_is_graded_pass_and_the_next_level_rides_along(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         door = RecordingDoor()
@@ -484,7 +484,7 @@ class ClerkTest(unittest.TestCase):
             [("a@example.com", "m2", "\n\n".join(["Pass", NOTE, ROUTE_BODY]))],
         )
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
         self.assertEqual(card.last_result, "pass")
         self.assertEqual(card.graded_tries_today, 1)
         self.assertEqual(card.graded_day, TODAY)
@@ -497,11 +497,11 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(door.created, ["vpce-1"])
         self.assertEqual(door.deleted, ["vpce-1"])
 
-    def test_a_fail_keeps_the_assignment_and_carries_the_note_and_findings(self):
+    def test_a_fail_keeps_the_level_and_carries_the_note_and_findings(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=2,
                 graded_day=TODAY,
             )
@@ -520,7 +520,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "\n\n".join(["Fail", NOTE, findings]))
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertEqual(card.last_result, "fail")
         self.assertEqual(card.graded_tries_today, 3)
         self.assertEqual(card.graded_day, TODAY)
@@ -533,7 +533,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         findings = "FINDINGS-START" + ("x" * 9000) + "FINDINGS-END"
@@ -551,13 +551,13 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(len(carried.encode("utf-8")), 8 * 1024)
         self.assertTrue(carried.startswith("FINDINGS-START"))
         self.assertNotIn("FINDINGS-END", carried)
-        self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["a@example.com"].open_level, "Classify")
 
-    def test_not_graded_leaves_the_assignment_open_and_spends_no_try(self):
+    def test_not_graded_leaves_the_level_open_and_spends_no_try(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=4,
                 graded_day=TODAY,
             )
@@ -574,7 +574,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "Not graded")
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
         self.assertEqual(card.last_result, "not graded")
         self.assertEqual(card.graded_tries_today, 4)
         self.assertEqual(card.graded_day, TODAY)
@@ -587,7 +587,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Route",
+                open_level="Route",
                 graded_tries_today=1,
                 graded_day=TODAY,
             )
@@ -603,7 +603,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "\n\n".join(["Pass", NOTE, REPLY_BODY]))
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Reply")
+        self.assertEqual(card.open_level, "Reply")
         self.assertFalse(card.finished)
         self.assertEqual(card.last_result, "pass")
         self.assertEqual(card.graded_tries_today, 2)
@@ -612,7 +612,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Reply",
+                open_level="Reply",
                 graded_tries_today=2,
                 graded_day=TODAY,
             )
@@ -632,7 +632,7 @@ class ClerkTest(unittest.TestCase):
         )
         card = cards["a@example.com"]
         self.assertTrue(card.finished)
-        self.assertEqual(card.open_assignment, "Reply")
+        self.assertEqual(card.open_level, "Reply")
         self.assertEqual(card.last_result, "pass")
         self.assertEqual(card.graded_tries_today, 3)
         self.assertFalse(card.in_flight)
@@ -641,7 +641,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         room = PassingRoom(cards)
@@ -667,18 +667,18 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(card.graded_tries_today, 1)
         self.assertEqual(card.last_result, "pass")
         self.assertEqual(card.handled_message_ids, {"m2", "m3"})
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
 
     def test_a_batch_of_accepted_zips_at_the_daily_cap_is_cap_hit_and_the_door_stays_shut(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=10,
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
-                open_assignment="Route",
+                open_level="Route",
                 graded_tries_today=10,
             ),
         }
@@ -705,11 +705,11 @@ class ClerkTest(unittest.TestCase):
         )
         self.assertEqual(room.graded, [])
         self.assertEqual(model.calls, [])
-        for email, assignment in (("a@example.com", "Classify"), ("b@example.com", "Route")):
+        for email, level in (("a@example.com", "Classify"), ("b@example.com", "Route")):
             card = cards[email]
             self.assertEqual(card.last_result, "cap hit")
             self.assertEqual(card.graded_tries_today, 10)
-            self.assertEqual(card.open_assignment, assignment)
+            self.assertEqual(card.open_level, level)
             self.assertFalse(card.in_flight)
             self.assertFalse(card.finished)
 
@@ -717,11 +717,11 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
         }
         door = RecordingDoor(["pending", "available"])
@@ -749,9 +749,9 @@ class ClerkTest(unittest.TestCase):
             [(reply.message_id, reply.body.splitlines()[0]) for reply in replies],
             [("early", "Pass"), ("late", "Fail")],
         )
-        self.assertEqual(cards["a@example.com"].open_assignment, "Route")
+        self.assertEqual(cards["a@example.com"].open_level, "Route")
         self.assertEqual(cards["a@example.com"].last_result, "pass")
-        self.assertEqual(cards["b@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["b@example.com"].open_level, "Classify")
         self.assertEqual(cards["b@example.com"].last_result, "fail")
         self.assertEqual(cards["b@example.com"].graded_tries_today, 1)
         self.assertEqual(cards["b@example.com"].handled_message_ids, {"late"})
@@ -762,11 +762,11 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
         }
         door = RecordingDoor()
@@ -793,7 +793,7 @@ class ClerkTest(unittest.TestCase):
         self.assertNotIn("later", cards["b@example.com"].handled_message_ids)
         self.assertEqual(cards["b@example.com"].graded_tries_today, 0)
         self.assertIsNone(cards["b@example.com"].last_result)
-        self.assertEqual(cards["b@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["b@example.com"].open_level, "Classify")
 
         later = receive(
             [Letter("b@example.com", "later", Zip(("main.py",), 40))],
@@ -807,13 +807,13 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(cards["b@example.com"].handled_message_ids, {"later"})
         self.assertEqual(cards["b@example.com"].last_result, "fail")
         self.assertEqual(cards["b@example.com"].graded_tries_today, 1)
-        self.assertEqual(cards["b@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["b@example.com"].open_level, "Classify")
 
     def test_a_second_zip_that_arrives_while_the_student_is_in_flight_asks_to_send_it_again(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         door = RecordingDoor()
@@ -848,14 +848,14 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(card.graded_tries_today, 1)
         self.assertEqual(card.last_result, "pass")
         self.assertEqual(card.handled_message_ids, {"m2", "extra"})
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
         self.assertFalse(card.in_flight)
 
     def test_the_same_message_id_is_graded_once_and_receives_one_reply(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         letter = Letter("a@example.com", "m2", Zip(("main.py",), 10))
@@ -889,7 +889,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=9,
                 graded_day=TODAY,
             )
@@ -917,13 +917,13 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(capped[0].body, "Cap hit")
         self.assertEqual(cards["a@example.com"].last_result, "cap hit")
         self.assertEqual(cards["a@example.com"].graded_tries_today, 10)
-        self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["a@example.com"].open_level, "Classify")
 
     def test_the_daily_cap_resets_on_the_next_utc_day(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=10,
                 graded_day=date(2026, 11, 1),
             )
@@ -944,13 +944,13 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(card.graded_tries_today, 1)
         self.assertEqual(card.graded_day, TODAY)
         self.assertEqual(card.last_result, "pass")
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
 
     def test_a_dead_zone_is_not_graded_and_spends_no_try(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Route",
+                open_level="Route",
                 graded_tries_today=4,
                 graded_day=TODAY,
             )
@@ -967,7 +967,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "Not graded")
         card = cards["a@example.com"]
-        self.assertEqual(card.open_assignment, "Route")
+        self.assertEqual(card.open_level, "Route")
         self.assertEqual(card.last_result, "not graded")
         self.assertEqual(card.graded_tries_today, 4)
         self.assertEqual(card.graded_day, TODAY)
@@ -978,11 +978,11 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
         }
 
@@ -1025,7 +1025,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Reply",
+                open_level="Reply",
                 finished=True,
                 graded_tries_today=3,
                 graded_day=TODAY,
@@ -1043,18 +1043,18 @@ class ClerkTest(unittest.TestCase):
         card = cards["a@example.com"]
         self.assertTrue(card.finished)
         self.assertEqual(card.graded_tries_today, 3)
-        self.assertEqual(card.open_assignment, "Reply")
+        self.assertEqual(card.open_level, "Reply")
         self.assertFalse(card.in_flight)
 
     def test_a_capped_student_does_not_start_a_room_while_another_student_is_graded(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=10,
             ),
         }
@@ -1078,14 +1078,14 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(cards["a@example.com"].last_result, "pass")
         self.assertEqual(cards["b@example.com"].graded_tries_today, 10)
         self.assertEqual(cards["b@example.com"].last_result, "cap hit")
-        self.assertEqual(cards["b@example.com"].open_assignment, "Classify")
+        self.assertEqual(cards["b@example.com"].open_level, "Classify")
         self.assertFalse(cards["b@example.com"].in_flight)
 
     def test_a_second_zip_that_arrives_while_the_door_is_opening_is_not_another_submission(self):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
             )
         }
         door = RecordingDoor(["pending", "available"])
@@ -1121,7 +1121,7 @@ class ClerkTest(unittest.TestCase):
         cards = {
             "a@example.com": StudentCard(
                 email="a@example.com",
-                open_assignment="Classify",
+                open_level="Classify",
                 graded_tries_today=10,
             )
         }
@@ -1136,7 +1136,14 @@ class ClerkTest(unittest.TestCase):
         card = cards["a@example.com"]
         self.assertEqual(card.graded_tries_today, 10)
         self.assertFalse(card.in_flight)
-        self.assertEqual(card.open_assignment, "Classify")
+        self.assertEqual(card.open_level, "Classify")
+
+
+    def test_the_card_holds_the_assignment_id_and_the_level_index(self):
+        card = StudentCard(email="a@example.com", open_level="Route")
+
+        self.assertEqual(card.assignment_id, "triage")
+        self.assertEqual(card.level_index, 1)
 
 
 if __name__ == "__main__":
