@@ -5,6 +5,7 @@ from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_ses as ses
 from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as subscriptions
@@ -34,6 +35,13 @@ class TutorStack(cdk.Stack):
 
         alerts = sns.Topic(self, "Alerts")
         alerts.add_subscription(subscriptions.EmailSubscription(OWNER_EMAIL))
+
+        configuration_set = ses.ConfigurationSet(self, "ConfigurationSet", configuration_set_name="tutor")
+        configuration_set.add_event_destination(
+            "BouncesAndComplaints",
+            destination=ses.EventDestination.sns_topic(alerts),
+            events=[ses.EmailSendingEvent.BOUNCE, ses.EmailSendingEvent.COMPLAINT, ses.EmailSendingEvent.REJECT],
+        )
 
         dead_letters = sqs.Queue(self, "DeadLetters", retention_period=cdk.Duration.days(14))
 

@@ -383,7 +383,7 @@ class ClerkTest(unittest.TestCase):
             "a@example.com": StudentCard(
                 email="a@example.com",
                 open_level="Classify",
-                graded_tries_today=10,
+                graded_tries_today=5,
             )
         }
         replies = receive(
@@ -395,7 +395,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, CLASSIFY_BODY)
         card = cards["a@example.com"]
-        self.assertEqual(card.graded_tries_today, 10)
+        self.assertEqual(card.graded_tries_today, 5)
         self.assertEqual(card.open_level, "Classify")
         self.assertFalse(card.in_flight)
 
@@ -674,12 +674,12 @@ class ClerkTest(unittest.TestCase):
             "a@example.com": StudentCard(
                 email="a@example.com",
                 open_level="Classify",
-                graded_tries_today=10,
+                graded_tries_today=5,
             ),
             "b@example.com": StudentCard(
                 email="b@example.com",
                 open_level="Route",
-                graded_tries_today=10,
+                graded_tries_today=5,
             ),
         }
         room = PassingRoom(cards)
@@ -708,7 +708,7 @@ class ClerkTest(unittest.TestCase):
         for email, level in (("a@example.com", "Classify"), ("b@example.com", "Route")):
             card = cards[email]
             self.assertEqual(card.last_result, "cap hit")
-            self.assertEqual(card.graded_tries_today, 10)
+            self.assertEqual(card.graded_tries_today, 5)
             self.assertEqual(card.open_level, level)
             self.assertFalse(card.in_flight)
             self.assertFalse(card.finished)
@@ -890,7 +890,7 @@ class ClerkTest(unittest.TestCase):
             "a@example.com": StudentCard(
                 email="a@example.com",
                 open_level="Classify",
-                graded_tries_today=9,
+                graded_tries_today=4,
                 graded_day=TODAY,
             )
         }
@@ -904,7 +904,7 @@ class ClerkTest(unittest.TestCase):
         )
         self.assertEqual(failed[0].body.splitlines()[0], "Fail")
         self.assertEqual(cards["a@example.com"].last_result, "fail")
-        self.assertEqual(cards["a@example.com"].graded_tries_today, 10)
+        self.assertEqual(cards["a@example.com"].graded_tries_today, 5)
 
         capped = receive(
             [Letter("a@example.com", "m3", Zip(("main.py",), 10))],
@@ -916,7 +916,7 @@ class ClerkTest(unittest.TestCase):
         )
         self.assertEqual(capped[0].body, "Cap hit")
         self.assertEqual(cards["a@example.com"].last_result, "cap hit")
-        self.assertEqual(cards["a@example.com"].graded_tries_today, 10)
+        self.assertEqual(cards["a@example.com"].graded_tries_today, 5)
         self.assertEqual(cards["a@example.com"].open_level, "Classify")
 
     def test_the_daily_cap_resets_on_the_next_utc_day(self):
@@ -924,7 +924,7 @@ class ClerkTest(unittest.TestCase):
             "a@example.com": StudentCard(
                 email="a@example.com",
                 open_level="Classify",
-                graded_tries_today=10,
+                graded_tries_today=5,
                 graded_day=date(2026, 11, 1),
             )
         }
@@ -1055,7 +1055,7 @@ class ClerkTest(unittest.TestCase):
             "b@example.com": StudentCard(
                 email="b@example.com",
                 open_level="Classify",
-                graded_tries_today=10,
+                graded_tries_today=5,
             ),
         }
         room = QueuedRoom([RoomResult.PASS])
@@ -1076,7 +1076,7 @@ class ClerkTest(unittest.TestCase):
         self.assertEqual(replies[1].body, "Cap hit")
         self.assertEqual(cards["a@example.com"].graded_tries_today, 1)
         self.assertEqual(cards["a@example.com"].last_result, "pass")
-        self.assertEqual(cards["b@example.com"].graded_tries_today, 10)
+        self.assertEqual(cards["b@example.com"].graded_tries_today, 5)
         self.assertEqual(cards["b@example.com"].last_result, "cap hit")
         self.assertEqual(cards["b@example.com"].open_level, "Classify")
         self.assertFalse(cards["b@example.com"].in_flight)
@@ -1122,7 +1122,7 @@ class ClerkTest(unittest.TestCase):
             "a@example.com": StudentCard(
                 email="a@example.com",
                 open_level="Classify",
-                graded_tries_today=10,
+                graded_tries_today=5,
             )
         }
         replies = receive(
@@ -1134,7 +1134,7 @@ class ClerkTest(unittest.TestCase):
 
         self.assertEqual(replies[0].body, "Send a single zip.")
         card = cards["a@example.com"]
-        self.assertEqual(card.graded_tries_today, 10)
+        self.assertEqual(card.graded_tries_today, 5)
         self.assertFalse(card.in_flight)
         self.assertEqual(card.open_level, "Classify")
 

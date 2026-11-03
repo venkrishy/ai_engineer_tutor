@@ -174,7 +174,7 @@ class GradingBatchTest(unittest.TestCase):
         self.assertEqual(graded_attempts_on(quotas["a@example.com"], TODAY), 2)
 
     def test_not_graded_does_not_spend_an_attempt(self):
-        quotas = {"a@example.com": Quota(TODAY, 9)}
+        quotas = {"a@example.com": Quota(TODAY, DAILY_GRADED_ATTEMPT_CAP - 1)}
         room = ScriptedRoom([RoomResult.NOT_GRADED, RoomResult.PASS])
         result = self.run_batch(
             [Submission("a@example.com", "m1"), Submission("a@example.com", "m2")],
@@ -184,10 +184,10 @@ class GradingBatchTest(unittest.TestCase):
         self.assertEqual(result_by_id(result)["m1"].outcome, Outcome.NOT_GRADED)
         self.assertFalse(result_by_id(result)["m1"].counts_toward_cap)
         self.assertEqual(result_by_id(result)["m2"].outcome, Outcome.PASS)
-        self.assertEqual(quotas["a@example.com"].graded_attempts, 10)
+        self.assertEqual(quotas["a@example.com"].graded_attempts, DAILY_GRADED_ATTEMPT_CAP)
 
-    def test_the_eleventh_graded_attempt_does_not_start_a_room(self):
-        quotas = {"a@example.com": Quota(TODAY, 9)}
+    def test_the_graded_attempt_after_the_cap_does_not_start_a_room(self):
+        quotas = {"a@example.com": Quota(TODAY, DAILY_GRADED_ATTEMPT_CAP - 1)}
         room = ScriptedRoom([RoomResult.PASS])
         result = self.run_batch(
             [Submission("a@example.com", "m1"), Submission("a@example.com", "m2")],
@@ -196,7 +196,7 @@ class GradingBatchTest(unittest.TestCase):
         )
         self.assertEqual(room.graded, ["m1"])
         self.assertEqual(result_by_id(result)["m2"].outcome, Outcome.CAPPED)
-        self.assertEqual(quotas["a@example.com"].graded_attempts, 10)
+        self.assertEqual(quotas["a@example.com"].graded_attempts, DAILY_GRADED_ATTEMPT_CAP)
 
     def test_the_cap_resets_on_the_next_utc_day(self):
         quotas = {"a@example.com": Quota(date(2026, 11, 1), DAILY_GRADED_ATTEMPT_CAP)}

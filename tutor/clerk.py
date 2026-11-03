@@ -131,7 +131,7 @@ WHAT_HAPPENS_NEXT = "\n".join(
         "",
         "Your code is graded against tickets you have not seen. If you pass, you are promoted and receive the next assignment. If you fail, you get feedback on what to fix, and you can send a new zip on this thread.",
         "",
-        "You have ten graded tries per day (UTC).",
+        "You have five graded tries per day (UTC).",
     ]
 )
 

@@ -78,7 +78,7 @@ One pass or one fail for a student on a UTC day.
 _Avoid_: attempt
 
 **Daily cap**:
-Ten graded tries for one student on one UTC day.
+Five graded tries for one student on one UTC day.
 _Avoid_: quota
 
 **Pass**:

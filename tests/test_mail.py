@@ -290,6 +290,7 @@ class MailSeamTest(unittest.TestCase):
             [
                 {
                     "FromEmailAddress": TUTOR,
+                    "ConfigurationSetName": "tutor",
                     "Content": {"Raw": {"Data": b"raw-reply"}},
                 }
             ],

@@ -17,6 +17,7 @@ from tutor.clerk import Letter, Zip, receive
 
 TUTOR_ADDRESS = "tutor@theaiguru.dev"
 REGION = "us-east-1"
+CONFIGURATION_SET = "tutor"
 MAILBOX_SIMULATOR = frozenset(
     {
         "success@simulator.amazonses.com",
@@ -76,6 +77,7 @@ class SesMail:
     def send(self, raw: bytes) -> None:
         self._client.send_email(
             FromEmailAddress=TUTOR_ADDRESS,
+            ConfigurationSetName=CONFIGURATION_SET,
             Content={"Raw": {"Data": raw}},
         )
 
