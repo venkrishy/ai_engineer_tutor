@@ -88,7 +88,7 @@ class CatalogTest(unittest.TestCase):
         self.assertTrue(ladder[0].prompt.startswith("Build a small Python program for me."))
 
     def test_hints_are_stored_with_the_level(self):
-        data = zip_of(TRIAGE, add={"levels/01-classify/hints.md": "First.\n---\nSecond."})
+        data = zip_of(TRIAGE, drop=("levels/01-classify/hints.md",), add={"levels/01-classify/hints.md": "First.\n---\nSecond."})
         self.upload(data)
 
         self.assertEqual(load_ladder(self.items)[0].hint_tiers, ["First.", "Second."])
