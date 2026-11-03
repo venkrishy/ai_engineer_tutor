@@ -13,7 +13,9 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Protocol
 
-from tutor.clerk import StudentCard
+from collections.abc import Sequence
+
+from tutor.clerk import LADDER, Level, StudentCard
 
 
 class Conflict(Exception):
@@ -134,7 +136,7 @@ class Store:
             last_letter_at=item.get("last_letter_at"),
         )
 
-    def save_card(self, card: StudentCard) -> None:
+    def save_card(self, card: StudentCard, ladder: Sequence[Level] = LADDER) -> None:
         now = _now()
         card.registered_at = card.registered_at or now
         card.last_letter_at = now
@@ -143,7 +145,8 @@ class Store:
             "SK": "CARD",
             "email": card.email,
             "assignment_id": card.assignment_id,
-            "level_index": card.level_index,
+            "level_index": card.level_index(ladder),
+            "level_count": sum(1 for level in ladder if level.assignment == card.assignment_id),
             "in_flight": card.in_flight,
             "graded_tries_today": card.graded_tries_today,
             "finished": card.finished,

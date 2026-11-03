@@ -106,7 +106,7 @@ class FixedNote:
         self.text = text
         self.calls = []
 
-    def note(self, level, result):
+    def note(self, level, result, findings=""):
         self.calls.append((level, result))
         return self.text
 
@@ -1143,7 +1143,7 @@ class ClerkTest(unittest.TestCase):
         card = StudentCard(email="a@example.com", open_level="Route")
 
         self.assertEqual(card.assignment_id, "triage")
-        self.assertEqual(card.level_index, 1)
+        self.assertEqual(card.level_index(), 1)
 
 
 if __name__ == "__main__":

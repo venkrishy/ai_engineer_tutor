@@ -27,6 +27,7 @@ from tutor.grading import (
 class Level:
     name: str
     instructions: str
+    assignment: str = "triage"
 
     @property
     def body(self) -> str:
@@ -168,9 +169,10 @@ class StudentCard:
     registered_at: str | None = None
     last_letter_at: str | None = None
 
-    @property
-    def level_index(self) -> int:
-        for index, level in enumerate(LADDER):
+    def level_index(self, ladder: Sequence[Level] = LADDER) -> int:
+        """Position of the open level among the levels of its assignment."""
+        mine = [level for level in ladder if level.assignment == self.assignment_id]
+        for index, level in enumerate(mine):
             if level.name == self.open_level:
                 return index
         return 0
@@ -192,7 +194,7 @@ _SECURITY_GROUP_ID = "sg-tutor"
 
 
 class Model(Protocol):
-    def note(self, level: str, result: str) -> str: ...
+    def note(self, level: str, result: str, findings: str = "") -> str: ...
 
 
 class _RoomAdapter:
@@ -251,18 +253,18 @@ def _asks_for_a_single_zip(letter: Letter) -> bool:
     return not _main_py_is_at_the_top_or_in_one_folder(archive.filenames)
 
 
-def _open_level_body(card: StudentCard) -> str:
-    for level in LADDER:
-        if level.name == card.open_level:
+def _open_level_body(card: StudentCard, ladder: Sequence[Level]) -> str:
+    for level in ladder:
+        if level.assignment == card.assignment_id and level.name == card.open_level:
             return level.body
-    return LADDER[0].body
+    return ladder[0].body
 
 
-def _level_after(name: str) -> Level | None:
-    for index, level in enumerate(LADDER):
-        if level.name == name:
-            if index + 1 < len(LADDER):
-                return LADDER[index + 1]
+def _level_after(card: StudentCard, name: str, ladder: Sequence[Level]) -> Level | None:
+    for index, level in enumerate(ladder):
+        if level.assignment == card.assignment_id and level.name == name:
+            if index + 1 < len(ladder):
+                return ladder[index + 1]
             return None
     return None
 
@@ -296,12 +298,14 @@ def _remember_quota(card: StudentCard, quota: Quota) -> None:
         card.graded_day = quota.attempt_day
 
 
-def _reply_for_known_student(card: StudentCard, letter: Letter) -> str:
+def _reply_for_known_student(
+    card: StudentCard, letter: Letter, ladder: Sequence[Level]
+) -> str:
     if card.finished:
         return "The ladder is finished."
     if _asks_for_a_single_zip(letter):
         return "Send a single zip."
-    return _open_level_body(card)
+    return _open_level_body(card, ladder)
 
 
 _SEND_AGAIN = "Send that zip again after the result."
@@ -314,6 +318,7 @@ def _bodies_for_results(
     result,
     adapter: _RoomAdapter,
     model: Model | None,
+    ladder: Sequence[Level],
 ) -> dict[str, str]:
     by_id = {item.message_id: item for item in result.items}
     bodies: dict[str, str] = {}
@@ -324,23 +329,21 @@ def _bodies_for_results(
         if item.outcome is Outcome.PASS:
             card.last_result = "pass"
             note = model.note(level_name, "pass") if model is not None else ""
-            nxt = _level_after(level_name)
+            nxt = _level_after(card, level_name, ladder)
             if nxt is None:
                 card.finished = True
                 trailer = "The ladder is finished."
             else:
                 card.open_level = nxt.name
+                card.assignment_id = nxt.assignment
                 trailer = nxt.body
             parts = ["Pass", note, trailer]
             bodies[letter.message_id] = "\n\n".join(part for part in parts if part)
         elif item.outcome is Outcome.FAIL:
             card.last_result = "fail"
-            note = model.note(level_name, "fail") if model is not None else ""
-            parts = [
-                "Fail",
-                note,
-                _truncate_findings(adapter.findings.get(letter.message_id, "")),
-            ]
+            findings = adapter.findings.get(letter.message_id, "")
+            note = model.note(level_name, "fail", findings) if model is not None else ""
+            parts = ["Fail", note, _truncate_findings(findings)]
             bodies[letter.message_id] = "\n\n".join(part for part in parts if part)
         elif item.outcome is Outcome.NOT_GRADED:
             card.last_result = "not graded"
@@ -360,6 +363,7 @@ def receive(
     model: Model | None = None,
     today: date | None = None,
     arrive: Callable[[], Sequence[Letter]] | None = None,
+    ladder: Sequence[Level] = LADDER,
 ) -> list[Reply]:
     today = today or datetime.now(timezone.utc).date()
     ordered: list[Letter] = []
@@ -389,7 +393,8 @@ def receive(
         if card is None:
             card = StudentCard(email=letter.email)
             cards[letter.email] = card
-            level = LADDER[0]
+            level = ladder[0]
+            card.assignment_id = level.assignment
             card.handled_message_ids.add(letter.message_id)
             card.open_level = level.name
             ordered.append(letter)
@@ -399,12 +404,12 @@ def receive(
             card.handled_message_ids.add(letter.message_id)
             ordered.append(letter)
             claimed.add(letter.email)
-            submissions.append((letter, card.open_level or LADDER[0].name))
+            submissions.append((letter, card.open_level or ladder[0].name))
             quotas.setdefault(letter.email, _quota_for(card, today))
             return Submission(letter.email, letter.message_id)
         card.handled_message_ids.add(letter.message_id)
         ordered.append(letter)
-        bodies[letter.message_id] = _reply_for_known_student(card, letter)
+        bodies[letter.message_id] = _reply_for_known_student(card, letter, ladder)
         return None
 
     for letter in letters:
@@ -442,6 +447,8 @@ def receive(
             arrive=batch_arrive if arrive is not None else None,
         )
         bodies.update(
-            _bodies_for_results(submissions, cards, quotas, result, adapter, model)
+            _bodies_for_results(
+                submissions, cards, quotas, result, adapter, model, ladder
+            )
         )
     return [Reply(letter.email, letter.message_id, bodies[letter.message_id]) for letter in ordered]

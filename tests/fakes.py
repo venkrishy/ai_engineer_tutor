@@ -46,3 +46,14 @@ class MemoryItems:
         row = self.rows.setdefault((pk, sk), {"PK": pk, "SK": sk})
         row[field] = row.get(field, 0) + amount
         return row[field]
+
+
+class MemoryBlobs:
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    def put(self, key, data):
+        self.objects[key] = data
+
+    def get(self, key):
+        return self.objects[key]

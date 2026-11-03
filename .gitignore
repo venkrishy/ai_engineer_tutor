@@ -4,3 +4,6 @@ __pycache__/
 venv/
 cdk.out/
 .pytest_cache/
+
+# hidden tickets and answer keys stay out of this public repo
+assignments/*/levels/*/tickets.json
