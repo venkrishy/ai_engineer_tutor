@@ -67,7 +67,7 @@ class TutorStack(cdk.Stack):
         mail_bucket.grant_read(self.clerk, "raw/*")
         self.clerk.add_to_role_policy(
             iam.PolicyStatement(
-                actions=["ses:SendEmail", "ses:GetAccount", "ses:ListEmailIdentities"],
+                actions=["ses:SendEmail", "ses:SendRawEmail", "ses:GetAccount", "ses:ListEmailIdentities"],
                 resources=["*"],
             )
         )
