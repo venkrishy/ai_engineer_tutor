@@ -3,8 +3,11 @@
 An assignment is uploaded as one zip bundle:
 
   assignment.json                  {"id": "triage", "name": "Triage tickets", "order": 1}
-  levels/01-classify/level.json    {"name": "Classify"}
-  levels/01-classify/instructions.md
+  levels/01-classify/level.json    {"name": "Classify", "title": "Classify incoming support tickets"}
+  levels/01-classify/context.md    optional: the story around the level
+  levels/01-classify/instructions.md   what the student will build, in a sentence or two
+  levels/01-classify/prompt.md     the one-shot prompt the student pastes into their coding tool
+  levels/01-classify/rubric.md     optional: what the note writer should look for
   levels/01-classify/tickets.json  five {"input": {...}, "expected": {...}, "good": {...}}
                                    ("good" is a full right answer, only needed when the
                                    expected fields alone are not one)
@@ -55,12 +58,20 @@ class BundleError(Exception):
         self.problems = problems
 
 
+LEVEL_TEXT_FIELDS = ("title", "context", "instructions", "prompt", "rubric")
+TEMPLATE_NAMES = ("welcome", "steps", "next")
+
+
 @dataclass(frozen=True)
 class LevelFiles:
     name: str
     instructions: str
     tickets: list[dict]
     checker: str | None
+    title: str = ""
+    context: str = ""
+    prompt: str = ""
+    rubric: str = ""
 
 
 @dataclass(frozen=True)
@@ -163,9 +174,16 @@ def parse_bundle(data: bytes) -> Bundle:
         if name in seen:
             problems.append(f"two levels are named {name}")
         seen.add(name)
-        instructions = files.get(base + "instructions.md", b"").decode(errors="replace").strip()
+        def text(name: str) -> str:
+            return files.get(base + name, b"").decode(errors="replace").strip()
+
+        instructions = text("instructions.md")
         if not instructions:
             problems.append(f"{base}instructions.md is missing or empty")
+        prompt = text("prompt.md")
+        if not prompt:
+            problems.append(f"{base}prompt.md is missing or empty")
+        title = str(info.get("title", "")).strip() if isinstance(info, dict) else ""
         tickets = load_json(base + "tickets.json")
         if tickets is not None:
             problems.extend(f"{base}tickets.json: {item}" for item in _ticket_problems(tickets))
@@ -173,7 +191,18 @@ def parse_bundle(data: bytes) -> Bundle:
         source = checker.decode(errors="replace") if checker is not None else None
         if isinstance(tickets, list) and not _ticket_problems(tickets):
             problems.extend(f"{base}checker.py: {item}" for item in _checker_problems(source, tickets))
-        levels.append(LevelFiles(name, instructions, tickets if isinstance(tickets, list) else [], source))
+        levels.append(
+            LevelFiles(
+                name,
+                instructions,
+                tickets if isinstance(tickets, list) else [],
+                source,
+                title,
+                text("context.md"),
+                prompt,
+                text("rubric.md"),
+            )
+        )
     if problems:
         raise BundleError(problems)
     return Bundle(assignment_id, assignment_name, order, tuple(levels))
@@ -225,7 +254,11 @@ def save_bundle(items, blobs: Blobs, bundle: Bundle) -> int:
             "PK": pk,
             "SK": f"LEVEL#{position:02d}",
             "name": level.name,
+            "title": level.title,
+            "context": level.context,
             "instructions": level.instructions,
+            "prompt": level.prompt,
+            "rubric": level.rubric,
             "tickets_key": f"{prefix}/tickets.json",
         }
         if level.checker is not None:
@@ -258,8 +291,54 @@ def load_ladder(items) -> tuple[Level, ...]:
     ladder: list[Level] = []
     for meta in assignments(items):
         for row in sorted(items.query(meta["PK"], "LEVEL#"), key=lambda row: row["SK"]):
-            ladder.append(Level(row["name"], row["instructions"], meta["id"]))
+            ladder.append(
+                Level(
+                    row["name"],
+                    row["instructions"],
+                    meta["id"],
+                    row.get("title", ""),
+                    row.get("context", ""),
+                    row.get("prompt", ""),
+                    row.get("rubric", ""),
+                    meta["name"],
+                )
+            )
     return tuple(ladder)
+
+
+def update_level(items, assignment_id: str, position: int, fields: dict) -> list[str]:
+    """Change the words of one level. Returns what is wrong, or an empty list when saved."""
+    row = items.get(f"ASSIGNMENT#{assignment_id}", f"LEVEL#{position:02d}")
+    if row is None:
+        return ["no such level"]
+    unknown = sorted(set(fields) - set(LEVEL_TEXT_FIELDS))
+    if unknown:
+        return [f"unknown field {name}" for name in unknown]
+    changed = dict(row)
+    changed.update({name: str(value).strip() for name, value in fields.items()})
+    problems = [f"{name} cannot be empty" for name in ("instructions", "prompt") if not changed.get(name)]
+    if problems:
+        return problems
+    items.put(changed)
+    return []
+
+
+def load_templates(items, defaults: dict[str, str]) -> dict[str, str]:
+    templates = dict(defaults)
+    for name in TEMPLATE_NAMES:
+        row = items.get(f"TEMPLATE#{name}", "TEXT")
+        if row and row.get("text", "").strip():
+            templates[name] = row["text"]
+    return templates
+
+
+def save_template(items, name: str, text: str) -> list[str]:
+    if name not in TEMPLATE_NAMES:
+        return [f"unknown template {name}"]
+    if not text.strip():
+        return ["the text cannot be empty"]
+    items.put({"PK": f"TEMPLATE#{name}", "SK": "TEXT", "text": text})
+    return []
 
 
 def load_assets(items, blobs: Blobs, assignment_id: str, level_name: str) -> LevelAssets:

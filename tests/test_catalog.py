@@ -74,10 +74,15 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual([level.name for level in ladder], ["Classify", "Route", "Reply"])
         self.assertEqual({level.assignment for level in ladder}, {"triage"})
 
-    def test_the_first_level_is_the_prompt_the_first_letter_carries(self):
+    def test_the_first_level_carries_the_title_the_story_and_the_one_shot_prompt(self):
         self.upload()
 
-        self.assertEqual(load_ladder(self.items)[0].body, CLASSIFY_BODY)
+        body = load_ladder(self.items)[0].body
+
+        self.assertTrue(body.startswith("## Classify incoming support tickets"))
+        self.assertIn("Imagine you work for a large enterprise software company", body)
+        self.assertIn("```\nBuild a small Python program for me.", body)
+        self.assertIn("create the zip", body)
 
     def test_assignments_follow_their_order(self):
         self.upload()

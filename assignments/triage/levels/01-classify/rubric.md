@@ -1,0 +1,1 @@
+Level 1 checks only the label. A pass means the label matched the rules on at least 4 of 5 hidden tickets. On a pass, congratulate the student and say in one sentence that the next level adds a priority and a queue. On a fail, point at the kind of ticket that went wrong using only the findings, and remind them that billing is checked before access, and access before bug.

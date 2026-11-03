@@ -8,7 +8,7 @@ the tutor grades it through the batch and replies on the same thread.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from typing import Protocol
@@ -23,15 +23,33 @@ from tutor.grading import (
     run_batch,
 )
 
+PROMPT_INTRO = (
+    "**Your prompt.** Copy everything in the box below and paste it into your coding tool "
+    "exactly as it is. It holds the whole task, so you do not need to add anything."
+)
+
+
 @dataclass(frozen=True)
 class Level:
     name: str
     instructions: str
     assignment: str = "triage"
+    title: str = ""
+    context: str = ""
+    prompt: str = ""
+    rubric: str = ""
+    assignment_name: str = ""
 
     @property
     def body(self) -> str:
-        return f"{self.name}\n\n{self.instructions}"
+        if not self.prompt:
+            return f"{self.name}\n\n{self.instructions}"
+        parts = [f"## {self.title or self.name}"]
+        if self.context:
+            parts.append(self.context)
+        parts.append(self.instructions)
+        parts.append(f"{PROMPT_INTRO}\n\n```\n{self.prompt}\n```")
+        return "\n\n".join(parts)
 
 
 HOW_IT_RUNS = "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else."
@@ -93,52 +111,54 @@ LADDER = (
 
 WELCOME = "\n".join(
     [
-        "Welcome to the AI Engineers Course.",
+        "**Welcome to the AI Engineers Course.**",
         "",
-        "The best way to become a Forward Deployed Engineer (FDE) is to practice writing code with agents. Use any agentic coding tool you like, such as GitHub Copilot or Claude Code.",
+        "The best way to become a Forward Deployed Engineer (FDE) is to practice building real things with AI coding agents. Use any agentic coding tool you like, such as Claude Code or GitHub Copilot.",
         "",
-        "Your assignment is below. When your code works, reply to this email with it attached as a single zip file.",
+        "Here is how it works. I send you an assignment, one level at a time. You build it with your tool and email me the code as a single zip file. I grade it against tickets you have not seen, then reply on this same thread with the result and your next level.",
+        "",
+        "Your first level is below.",
     ]
 )
 
 FIRST_STEPS = "\n".join(
     [
-        "Since this is your first submission, here is the process step by step.",
+        "**How to submit, step by step**",
         "",
         "With Claude Code:",
-        "1. Install it: curl -fsSL https://claude.ai/install.sh | bash",
-        "2. Make an empty folder for this assignment and start Claude Code in it: mkdir classify && cd classify && claude",
-        "3. Paste the assignment above as your prompt, and add: \"Write main.py using only the Python standard library. Test it by piping the sample ticket into python3 main.py. When it works, create classify.zip containing main.py.\"",
-        "4. Read what the agent writes and check the output it printed for the sample ticket.",
-        "5. Check that classify.zip exists (if not, run: zip classify.zip main.py).",
-        "6. Reply to this email with classify.zip attached.",
+        "1. Install it: `curl -fsSL https://claude.ai/install.sh | bash`",
+        "2. Make an empty folder and start Claude Code in it: `mkdir classify && cd classify && claude`",
+        "3. Paste the whole prompt from the box above. Claude Code writes `main.py`, tests it, and creates `classify.zip` for you.",
+        "4. Check that `classify.zip` is in the folder. If it is not, run `zip classify.zip main.py`.",
+        "5. Reply to this email with `classify.zip` attached.",
         "",
         "With GitHub Copilot:",
         "1. Install Visual Studio Code and the GitHub Copilot extension, then sign in to GitHub.",
-        "2. Open an empty folder for this assignment (File > Open Folder).",
+        "2. Open an empty folder (File > Open Folder).",
         "3. Open the Copilot Chat view and switch the mode to Agent.",
-        "4. Paste the assignment above as your prompt, and add: \"Write main.py using only the Python standard library. Test it by piping the sample ticket into python3 main.py. When it works, create classify.zip containing main.py.\"",
-        "5. Review the changes and check the output it printed for the sample ticket.",
-        "6. Check that classify.zip exists (if not, run: zip classify.zip main.py).",
-        "7. Reply to this email with classify.zip attached.",
+        "4. Paste the whole prompt from the box above. Copilot writes `main.py`, tests it, and creates `classify.zip` for you.",
+        "5. Check that `classify.zip` is in the folder. If it is not, run `zip classify.zip main.py`.",
+        "6. Reply to this email with `classify.zip` attached.",
         "",
-        "The zip rules: one zip per email, 10 MB or less, with main.py at the top or inside a single folder.",
+        "**Zip rules:** one zip per email, 10 MB or less, with `main.py` at the top or inside a single folder.",
     ]
 )
 
 WHAT_HAPPENS_NEXT = "\n".join(
     [
-        "What happens next:",
+        "**What happens next**",
         "",
-        "Your code is graded against tickets you have not seen. If you pass, you are promoted and receive the next assignment. If you fail, you get feedback on what to fix, and you can send a new zip on this thread.",
+        "Your code is graded against tickets you have not seen. If you pass, you move up a level and I send you the next one. If you fail, you get notes on what to fix, and you can send a new zip on this thread.",
         "",
         "You have five graded tries per day (UTC).",
     ]
 )
 
+DEFAULT_TEMPLATES = {"welcome": WELCOME, "steps": FIRST_STEPS, "next": WHAT_HAPPENS_NEXT}
 
-def _first_letter_body(level: Level) -> str:
-    return "\n\n".join([WELCOME, level.body, FIRST_STEPS, WHAT_HAPPENS_NEXT])
+
+def _first_letter_body(level: Level, templates: Mapping[str, str]) -> str:
+    return "\n\n".join([templates["welcome"], level.body, templates["steps"], templates["next"]])
 
 
 @dataclass(frozen=True)
@@ -364,6 +384,7 @@ def receive(
     today: date | None = None,
     arrive: Callable[[], Sequence[Letter]] | None = None,
     ladder: Sequence[Level] = LADDER,
+    templates: Mapping[str, str] = DEFAULT_TEMPLATES,
 ) -> list[Reply]:
     today = today or datetime.now(timezone.utc).date()
     ordered: list[Letter] = []
@@ -398,7 +419,7 @@ def receive(
             card.handled_message_ids.add(letter.message_id)
             card.open_level = level.name
             ordered.append(letter)
-            bodies[letter.message_id] = _first_letter_body(level)
+            bodies[letter.message_id] = _first_letter_body(level, templates)
             return None
         if not card.finished and _is_accepted_zip(letter):
             card.handled_message_ids.add(letter.message_id)

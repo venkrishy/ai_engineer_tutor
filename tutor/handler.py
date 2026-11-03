@@ -8,8 +8,8 @@ from urllib.parse import unquote_plus
 
 import boto3
 
-from tutor.catalog import S3Blobs, load_assets, load_ladder
-from tutor.clerk import LADDER
+from tutor.catalog import S3Blobs, load_assets, load_ladder, load_templates
+from tutor.clerk import DEFAULT_TEMPLATES, LADDER
 from tutor.mail import REGION, SesMail, ses_sending
 from tutor.notes import BedrockModel
 from tutor.rooms import AgentCoreRoom, NullDoor
@@ -27,9 +27,11 @@ def lambda_handler(event, context):
     items = DynamoItems(table)
     store = Store(items)
     mail = SesMail(sesv2)
-    model = BedrockModel(boto3.client("bedrock-runtime", region_name=REGION))
+    bedrock = boto3.client("bedrock-runtime", region_name=REGION)
     agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
     ladder = load_ladder(items) or LADDER
+    templates = load_templates(items, DEFAULT_TEMPLATES)
+    model = BedrockModel(bedrock, ladder)
     for record in event["Records"]:
         bucket = record["s3"]["bucket"]["name"]
         key = unquote_plus(record["s3"]["object"]["key"])
@@ -54,6 +56,7 @@ def lambda_handler(event, context):
             ses=ses_sending(sesv2),
             model=model,
             ladder=ladder,
+            templates=templates,
             make_room=make_room,
         )
         print(json.dumps({"key": key, "result": result}))

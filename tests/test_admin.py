@@ -150,3 +150,59 @@ class AdminTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EditingTest(AdminTest):
+    """Same setup as AdminTest, adding the editing endpoints."""
+
+    def test_a_level_can_be_edited_and_the_ladder_shows_it(self):
+        from tutor.catalog import load_ladder
+
+        self.call("POST", "/api/assignments", zip_of(TRIAGE))
+
+        done = self.call("PUT", "/api/levels/triage/1", json.dumps({"title": "New title", "rubric": "Be kind."}).encode())
+
+        self.assertEqual(done.status, 200)
+        level = load_ladder(self.items)[0]
+        self.assertEqual((level.title, level.rubric), ("New title", "Be kind."))
+        self.assertIn("## New title", level.body)
+
+    def test_a_level_cannot_lose_its_prompt(self):
+        self.call("POST", "/api/assignments", zip_of(TRIAGE))
+
+        done = self.call("PUT", "/api/levels/triage/1", json.dumps({"prompt": "  "}).encode())
+
+        self.assertEqual(done.status, 400)
+        self.assertIn("prompt cannot be empty", json.loads(done.body)["problems"])
+
+    def test_an_unknown_field_is_refused(self):
+        self.call("POST", "/api/assignments", zip_of(TRIAGE))
+
+        done = self.call("PUT", "/api/levels/triage/1", json.dumps({"name": "x"}).encode())
+
+        self.assertEqual(done.status, 400)
+
+    def test_a_template_can_be_edited_and_is_listed(self):
+        self.call("PUT", "/api/templates/welcome", json.dumps({"text": "**Hi there**"}).encode())
+
+        templates = json.loads(self.call("GET", "/api/templates").body)
+
+        self.assertEqual(templates["welcome"], "**Hi there**")
+        self.assertIn("steps", templates)
+
+    def test_an_unknown_template_is_refused(self):
+        done = self.call("PUT", "/api/templates/secret", json.dumps({"text": "x"}).encode())
+
+        self.assertEqual(done.status, 400)
+
+    def test_the_edited_welcome_is_used_for_the_first_letter(self):
+        from tutor.clerk import receive, Letter
+
+        self.call("PUT", "/api/templates/welcome", json.dumps({"text": "**Custom welcome**"}).encode())
+        from tutor.catalog import load_templates
+        from tutor.clerk import DEFAULT_TEMPLATES
+
+        templates = load_templates(self.items, DEFAULT_TEMPLATES)
+        replies = receive([Letter("a@example.com", "m1")], {}, door=None, room=None, templates=templates)
+
+        self.assertTrue(replies[0].body.startswith("**Custom welcome**"))

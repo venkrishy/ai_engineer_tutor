@@ -12,7 +12,7 @@ import re
 from datetime import date, datetime, timezone
 
 from tutor.grading import DAILY_GRADED_ATTEMPT_CAP
-from tutor.clerk import LADDER, StudentCard
+from tutor.clerk import DEFAULT_TEMPLATES, LADDER, StudentCard
 from tutor.mail import _addressed_to_tutor, deliver, sender_of, zip_payload
 from tutor.store import Store
 
@@ -44,6 +44,7 @@ def handle(
     model=None,
     today=None,
     ladder=LADDER,
+    templates=DEFAULT_TEMPLATES,
     make_room=None,
 ) -> str:
     incoming = email.message_from_bytes(raw)
@@ -78,6 +79,7 @@ def handle(
             model=model,
             today=today,
             ladder=ladder,
+            templates=templates,
         )
     except Exception:
         store.release(message_id)

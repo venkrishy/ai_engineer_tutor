@@ -5,6 +5,7 @@ import zipfile
 from datetime import date
 from email.message import EmailMessage
 
+from fakes import plain_part
 from test_clerk import (
     FIRST_LETTER_BODY,
     DoorThatMustStayShut,
@@ -77,7 +78,7 @@ class MailSeamTest(unittest.TestCase):
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
         self.assertEqual(reply["In-Reply-To"], FIRST_MESSAGE_ID)
         self.assertEqual(reply["References"], FIRST_MESSAGE_ID)
-        self.assertEqual(reply.get_content().splitlines(), FIRST_LETTER_BODY.splitlines())
+        self.assertEqual(plain_part(reply).splitlines(), FIRST_LETTER_BODY.splitlines())
 
     def test_a_stored_letter_from_the_testers_gmail_is_answered_and_a_setup_note_is_left_alone(self):
         cards = {}
@@ -102,7 +103,7 @@ class MailSeamTest(unittest.TestCase):
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
         self.assertEqual(reply["Subject"], "Re: Registration [triage]")
         self.assertEqual(reply["In-Reply-To"], FIRST_MESSAGE_ID)
-        self.assertEqual(reply.get_content().splitlines(), FIRST_LETTER_BODY.splitlines())
+        self.assertEqual(plain_part(reply).splitlines(), FIRST_LETTER_BODY.splitlines())
 
     def test_an_accepted_zip_from_that_gmail_is_graded_and_the_reply_starts_with_the_result(self):
         cards = {}
@@ -136,7 +137,7 @@ class MailSeamTest(unittest.TestCase):
             )
 
         first_lines = [
-            email.message_from_bytes(raw, policy=email.policy.default).get_content().splitlines()[0]
+            plain_part(email.message_from_bytes(raw, policy=email.policy.default)).splitlines()[0]
             for raw in mail.sent
         ]
         self.assertEqual(first_lines, ["Pass", "Fail", "Not graded"])
@@ -190,7 +191,7 @@ class MailSeamTest(unittest.TestCase):
         self.assertEqual(list(cards), [TESTER])
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
-        self.assertEqual(reply.get_content().splitlines(), FIRST_LETTER_BODY.splitlines())
+        self.assertEqual(plain_part(reply).splitlines(), FIRST_LETTER_BODY.splitlines())
 
     def test_without_production_access_the_mailbox_simulator_can_receive_the_reply(self):
         sender = "bounce@simulator.amazonses.com"

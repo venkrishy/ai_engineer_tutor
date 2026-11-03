@@ -37,3 +37,18 @@ class NotesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoteContextTest(unittest.TestCase):
+    def test_the_prompt_carries_the_levels_goal_and_rubric(self):
+        from tutor.clerk import Level
+
+        ladder = (Level("Route", "Add a priority.", "triage", title="Route tickets", rubric="Praise the queue rules."),)
+        client = FakeBedrock()
+
+        BedrockModel(client, ladder).note("Route", "pass")
+
+        text = client.calls[0]["messages"][0]["content"][0]["text"]
+        self.assertIn("Level: Route tickets", text)
+        self.assertIn("What the student builds: Add a priority.", text)
+        self.assertIn("Rubric for this level: Praise the queue rules.", text)

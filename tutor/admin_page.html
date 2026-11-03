@@ -33,7 +33,7 @@
 <main id="main"></main>
 <script>
 const $ = (s) => document.querySelector(s);
-const tabs = ["Students", "Letters", "Assignments", "Settings"];
+const tabs = ["Students", "Letters", "Assignments", "Emails", "Settings"];
 let tab = "Students";
 
 function el(tag, attrs, ...kids) {
@@ -69,7 +69,7 @@ function showLogin() {
 function start() {
   const nav = $("#nav"); nav.hidden = false;
   nav.replaceChildren(...tabs.map((t) => el("button", { class: t === tab ? "on" : "", onclick: () => { tab = t; start(); } }, t)));
-  ({ Students: students, Letters: letters, Assignments: assignmentsView, Settings: settings })[tab]();
+  ({ Students: students, Letters: letters, Assignments: assignmentsView, Emails: emails, Settings: settings })[tab]();
 }
 async function students() {
   const { data } = await api("/api/students");
@@ -117,7 +117,35 @@ async function assignmentsView() {
   $("#main").replaceChildren(
     el("div", { class: "box" }, el("strong", {}, "Upload an assignment"), el("p", { class: "muted" }, "One zip: assignment.json and a levels folder. Assignments are given in the order number you set."), el("div", { class: "row" }, file, el("button", { class: "act primary", onclick: upload }, "Upload")), msg),
     ...data.map((a) => el("div", { class: "box" }, el("strong", {}, `${a.order}. ${a.name}`), el("span", { class: "muted" }, `  id ${a.id}, version ${a.version}`),
-      ...a.levels.map((l, i) => el("details", {}, el("summary", {}, `Level ${i + 1}: ${l.name}`), el("pre", {}, l.instructions))))));
+      ...a.levels.map((l, i) => levelEditor(a, l, i)))));
+}
+const FIELDS = [["title", "Title in the email", 1], ["context", "Story (context paragraph)", 5], ["instructions", "What the student will build", 3], ["prompt", "One-shot prompt the student pastes", 18], ["rubric", "Rubric for the note writer", 5]];
+function levelEditor(a, l, i) {
+  const boxes = {};
+  const msg = el("span", {});
+  const form = el("div", {}, ...FIELDS.map(([key, label, rows]) => {
+    const box = el("textarea", { rows: String(rows), style: "width:100%;font:13px/1.45 ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--ink)" });
+    box.value = l[key] || ""; boxes[key] = box;
+    return el("div", { style: "margin:10px 0" }, el("label", { class: "muted" }, label), box);
+  }), el("div", { class: "row" }, el("button", { class: "act primary", onclick: async () => {
+    const body = Object.fromEntries(Object.entries(boxes).map(([k, b]) => [k, b.value]));
+    const r = await api(`/api/levels/${a.id}/${l.position}`, { method: "PUT", body: JSON.stringify(body) });
+    msg.className = r.ok ? "good" : "bad"; msg.textContent = r.ok ? "Saved. The next email uses this text." : r.data.problems.join("; ");
+  } }, "Save"), msg));
+  return el("details", {}, el("summary", {}, `Level ${i + 1}: ${l.name}`), form);
+}
+async function emails() {
+  const { data } = await api("/api/templates");
+  const labels = { welcome: "Welcome (top of the first email)", steps: "Step-by-step submit guide (first email)", next: "What happens next (first email)" };
+  $("#main").replaceChildren(el("p", { class: "muted" }, "Text you can use: **bold**, `code`, lists starting with - or 1., and blank lines between paragraphs."),
+    ...Object.keys(labels).map((name) => {
+      const box = el("textarea", { rows: "12", style: "width:100%;font:13px/1.45 ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--ink)" });
+      box.value = data[name]; const msg = el("span", {});
+      return el("div", { class: "box" }, el("strong", {}, labels[name]), box, el("div", { class: "row" }, el("button", { class: "act primary", onclick: async () => {
+        const r = await api("/api/templates/" + name, { method: "PUT", body: JSON.stringify({ text: box.value }) });
+        msg.className = r.ok ? "good" : "bad"; msg.textContent = r.ok ? "Saved." : r.data.problems.join("; ");
+      } }, "Save"), msg));
+    }));
 }
 async function settings() {
   const { data } = await api("/api/settings");

@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fakes import MemoryItems
+from fakes import MemoryItems, plain_part
 from test_clerk import FIRST_LETTER_BODY, DoorThatMustStayShut, QueuedRoom, RoomThatMustStayShut
 from test_mail import MailStandIn, raw_letter, verified_for, TESTER
 
@@ -25,7 +25,7 @@ class FailingMail:
 
 
 def body_of(raw):
-    return email.message_from_bytes(raw, policy=email.policy.default).get_content()
+    return plain_part(email.message_from_bytes(raw, policy=email.policy.default))
 
 
 def trusted(raw, *, spam="PASS", virus="PASS", auth="dmarc=pass header.from=gmail.com;"):

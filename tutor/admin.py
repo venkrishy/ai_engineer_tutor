@@ -17,7 +17,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from tutor.catalog import BundleError, Blobs, assignments, parse_bundle, save_bundle
+from tutor.catalog import (
+    TEMPLATE_NAMES,
+    BundleError,
+    Blobs,
+    assignments,
+    load_templates,
+    parse_bundle,
+    save_bundle,
+    save_template,
+    update_level,
+)
+from tutor.clerk import DEFAULT_TEMPLATES
 from tutor.service import GLOBAL_DAILY_CAP
 from tutor.store import Store
 
@@ -148,6 +159,12 @@ class AdminApp:
             return self._assignments()
         if route == ("POST", "/api/assignments"):
             return self._upload(request.body)
+        if request.method == "PUT" and request.path.startswith("/api/levels/"):
+            return self._edit_level(request)
+        if route == ("GET", "/api/templates"):
+            return _json(200, load_templates(self._items, DEFAULT_TEMPLATES))
+        if request.method == "PUT" and request.path.startswith("/api/templates/"):
+            return self._edit_template(request)
         if route == ("GET", "/api/settings"):
             return self._settings()
         if route == ("POST", "/api/settings"):
@@ -197,7 +214,18 @@ class AdminApp:
                     "name": meta["name"],
                     "order": meta["order"],
                     "version": meta["version"],
-                    "levels": [{"name": row["name"], "instructions": row["instructions"]} for row in levels],
+                    "levels": [
+                        {
+                            "position": int(row["SK"].split("#")[1]),
+                            "name": row["name"],
+                            "title": row.get("title", ""),
+                            "context": row.get("context", ""),
+                            "instructions": row["instructions"],
+                            "prompt": row.get("prompt", ""),
+                            "rubric": row.get("rubric", ""),
+                        }
+                        for row in levels
+                    ],
                 }
             )
         return _json(200, out)
@@ -209,6 +237,25 @@ class AdminApp:
             return _json(400, {"problems": error.problems})
         version = save_bundle(self._items, self._blobs, bundle)
         return _json(200, {"id": bundle.id, "version": version, "levels": len(bundle.levels)})
+
+    def _edit_level(self, request: Request) -> Response:
+        parts = request.path.split("/")
+        try:
+            assignment_id, position = parts[3], int(parts[4])
+            fields = json.loads(request.body or b"{}")
+        except (IndexError, ValueError):
+            return _json(400, {"problems": ["bad request"]})
+        problems = update_level(self._items, assignment_id, position, fields)
+        return _json(400, {"problems": problems}) if problems else _json(200, {"saved": True})
+
+    def _edit_template(self, request: Request) -> Response:
+        name = request.path[len("/api/templates/"):]
+        try:
+            text = str(json.loads(request.body or b"{}").get("text", ""))
+        except ValueError:
+            text = ""
+        problems = save_template(self._items, name, text)
+        return _json(400, {"problems": problems}) if problems else _json(200, {"saved": True, "names": list(TEMPLATE_NAMES)})
 
     def _settings(self) -> Response:
         today = self._now().date()

@@ -1,0 +1,1 @@
+Your triage program now sorts and routes every ticket. The last step is the customer's experience: a ticket nobody answers feels ignored. Extend the program so it also drafts a short, friendly first reply that tells the customer which team has their ticket.

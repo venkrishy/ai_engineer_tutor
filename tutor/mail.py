@@ -10,10 +10,12 @@ import email
 import io
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import getaddresses, parseaddr
 
-from tutor.clerk import LADDER, Letter, Zip, receive
+from tutor.clerk import DEFAULT_TEMPLATES, LADDER, Letter, Zip, receive
+from tutor.render import render_reply, status_for
 
 TUTOR_ADDRESS = "tutor@theaiguru.dev"
 REGION = "us-east-1"
@@ -122,7 +124,17 @@ def ses_mail(factory=None) -> SesMail:
 
 
 def deliver(
-    raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None, today=None, ladder=LADDER
+    raw: bytes,
+    cards,
+    *,
+    mail,
+    door,
+    room,
+    ses: SesSending,
+    model=None,
+    today=None,
+    ladder=LADDER,
+    templates=DEFAULT_TEMPLATES,
 ):
     incoming = email.message_from_bytes(raw)
     if not _addressed_to_tutor(incoming):
@@ -148,6 +160,7 @@ def deliver(
         model=model,
         today=today,
         ladder=ladder,
+        templates=templates,
     )
     if not replies:
         return None
@@ -163,7 +176,9 @@ def deliver(
     outbound["To"] = reply.email
     outbound["In-Reply-To"] = message_id
     outbound["References"] = message_id
-    outbound.set_content(reply.body)
+    text, page = render_reply(reply.body, status_for(card, ladder, today or datetime.now(timezone.utc).date()))
+    outbound.set_content(text)
+    outbound.add_alternative(page, subtype="html")
     mail.send(outbound.as_bytes())
     return reply.body
 

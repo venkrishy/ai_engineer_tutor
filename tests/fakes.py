@@ -57,3 +57,8 @@ class MemoryBlobs:
 
     def get(self, key):
         return self.objects[key]
+
+
+def plain_part(message) -> str:
+    """The plain-text part of a reply without the status footer."""
+    return message.get_body(preferencelist=("plain",)).get_content().split("\n\n---\n")[0]
