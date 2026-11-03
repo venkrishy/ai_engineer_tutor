@@ -103,6 +103,29 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(run(raw, self.store, self.mail), "ignored")
         self.assertEqual(self.mail.sent, [])
 
+    def test_the_room_is_built_with_the_cards_and_the_zip_of_this_letter(self):
+        run(raw_letter(TESTER, "<m1@x>"), self.store, self.mail)
+        built = []
+
+        def make_room(cards, payloads):
+            built.append((sorted(cards), payloads))
+            return QueuedRoom([RoomResult.PASS])
+
+        zipped = raw_letter(TESTER, "<m2@x>", files=[("main.py", "print(1)")])
+        handle(
+            trusted(zipped),
+            store=self.store,
+            mail=self.mail,
+            door=NullDoor(),
+            ses=verified_for(TESTER),
+            make_room=make_room,
+            today=date(2026, 11, 2),
+        )
+
+        self.assertEqual(built[0][0], [TESTER])
+        self.assertEqual(list(built[0][1]), ["<m2@x>"])
+        self.assertTrue(built[0][1]["<m2@x>"].startswith(b"PK"))
+
     def test_a_letter_that_failed_the_spam_check_gets_no_reply(self):
         result = run(raw_letter(TESTER, "<m1@x>"), self.store, self.mail, spam="FAIL")
 

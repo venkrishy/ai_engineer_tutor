@@ -12,8 +12,8 @@ import re
 from datetime import date, datetime, timezone
 
 from tutor.grading import DAILY_GRADED_ATTEMPT_CAP
-from tutor.clerk import StudentCard
-from tutor.mail import _addressed_to_tutor, deliver, sender_of
+from tutor.clerk import LADDER, StudentCard
+from tutor.mail import _addressed_to_tutor, deliver, sender_of, zip_payload
 from tutor.store import Store
 
 GLOBAL_DAILY_CAP = 100
@@ -33,7 +33,19 @@ def is_trusted(incoming) -> bool:
     return bool(signed) and (domain == signed.group(1) or domain.endswith("." + signed.group(1)))
 
 
-def handle(raw: bytes, *, store: Store, mail, door, room, ses, model=None, today=None) -> str:
+def handle(
+    raw: bytes,
+    *,
+    store: Store,
+    mail,
+    door,
+    room=None,
+    ses,
+    model=None,
+    today=None,
+    ladder=LADDER,
+    make_room=None,
+) -> str:
     incoming = email.message_from_bytes(raw)
     if not _addressed_to_tutor(incoming):
         return "ignored"
@@ -52,16 +64,27 @@ def handle(raw: bytes, *, store: Store, mail, door, room, ses, model=None, today
     cards = {sender: card} if card is not None else {}
     tries_before = _tries_on(card, today) if card is not None else 0
     held = _hold_at_global_cap(card, store, today)
+    if make_room is not None:
+        payload = zip_payload(incoming)
+        room = make_room(cards, {message_id: payload} if payload is not None else {})
     try:
         body = deliver(
-            raw, cards, mail=mail, door=door, room=room, ses=ses, model=model, today=today
+            raw,
+            cards,
+            mail=mail,
+            door=door,
+            room=room,
+            ses=ses,
+            model=model,
+            today=today,
+            ladder=ladder,
         )
     except Exception:
         store.release(message_id)
         raise
     if sender in cards:
         _count_graded_tries(cards[sender], tries_before, held, store, today)
-        store.save_card(cards[sender])
+        store.save_card(cards[sender], ladder)
     store.record_event(sender, message_id, "letter", incoming.get("Subject") or "")
     if body is not None:
         store.record_event(sender, message_id, "reply", body)

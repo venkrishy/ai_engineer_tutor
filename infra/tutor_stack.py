@@ -62,13 +62,35 @@ class TutorStack(cdk.Stack):
             retry_attempts=2,
         )
         self.table.grant_read_write_data(self.clerk)
-        mail_bucket.grant_read(self.clerk)
+        mail_bucket.grant_read(self.clerk, "raw/*")
         self.clerk.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["ses:SendEmail", "ses:GetAccount", "ses:ListEmailIdentities"],
                 resources=["*"],
             )
         )
+
+        self.clerk.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel", "bedrock:Converse"],
+                resources=[
+                    f"arn:aws:bedrock:us-east-1:{self.account}:inference-profile/us.anthropic.claude-sonnet-4-6",
+                    "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6",
+                ],
+            )
+        )
+        self.clerk.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock-agentcore:StartCodeInterpreterSession",
+                    "bedrock-agentcore:InvokeCodeInterpreter",
+                    "bedrock-agentcore:StopCodeInterpreterSession",
+                    "bedrock-agentcore:GetCodeInterpreterSession",
+                ],
+                resources=["*"],
+            )
+        )
+        mail_bucket.grant_read_write(self.clerk, "assignments/*")
 
         mail_bucket.add_event_notification(
             s3.EventType.OBJECT_CREATED,

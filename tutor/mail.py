@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from email.message import EmailMessage
 from email.utils import getaddresses, parseaddr
 
-from tutor.clerk import Letter, Zip, receive
+from tutor.clerk import LADDER, Letter, Zip, receive
 
 TUTOR_ADDRESS = "tutor@theaiguru.dev"
 REGION = "us-east-1"
@@ -37,6 +37,17 @@ class SesSending:
 
 class SendRefused(Exception):
     """The reply stays unsent. The letter is left unhandled."""
+
+
+def zip_payload(incoming) -> bytes | None:
+    """The bytes of the one zip on a letter, or None when there is not exactly one."""
+    attachments = [
+        part for part in incoming.walk() if part.get_content_disposition() == "attachment"
+    ]
+    if len(attachments) != 1:
+        return None
+    payload = attachments[0].get_payload(decode=True) or b""
+    return payload if zipfile.is_zipfile(io.BytesIO(payload)) else None
 
 
 def _zip_for(incoming) -> tuple[Zip | None, int | None]:
@@ -110,7 +121,9 @@ def ses_mail(factory=None) -> SesMail:
     return SesMail(factory("sesv2", region_name=REGION))
 
 
-def deliver(raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None, today=None):
+def deliver(
+    raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None, today=None, ladder=LADDER
+):
     incoming = email.message_from_bytes(raw)
     if not _addressed_to_tutor(incoming):
         return None
@@ -134,6 +147,7 @@ def deliver(raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None,
         room=room,
         model=model,
         today=today,
+        ladder=ladder,
     )
     if not replies:
         return None
