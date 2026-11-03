@@ -236,7 +236,7 @@
     </ul>
 
     <h2>Self-Registration</h2>
-    <p>There is no form. A student registers by writing to <strong>tutor@aiguru.dev</strong>. That first letter creates them, and the reply is problem 1. A zip on that first letter is ignored.</p>
+    <p>There is no form. A student registers by writing to <strong>tutor@theaiguru.dev</strong>. That first letter creates them, and the reply is problem 1. A zip on that first letter is ignored.</p>
     <h2>Coding Assignment and Grading Workflow</h2>
     <p>Each attempt is a submission that solves the coding assignment, emailed as one zip of 10 MB or less. The zip holds <strong>main.py</strong> at the top or inside a single folder. It is not graded on arrival. It waits with the others.</p>
     <p>The backend grades the waiting assignments together, in one batch, and it does that in private. Each student has a daily cap on how many assignments they can submit. Their code runs on one model chosen ahead of time, and grading uses that same model and no other.</p>
@@ -244,7 +244,7 @@
     <figure class="diagram">
       <svg class="arch" viewBox="0 0 740 900" role="img" aria-labelledby="diagramTitle diagramDesc">
         <title id="diagramTitle">How a letter moves</title>
-        <desc id="diagramDesc">White boxes are the work. Blue boxes are Amazon. A student writes to tutor@aiguru.dev. Cloudflare, which is not Amazon, holds the DNS. SES receives the mail and later sends the reply. S3 keeps the raw letter. Lambda is the clerk. DynamoDB holds the student card. Secrets Manager holds the model key. A VPC is the private network where grading runs. The reply goes back to the same inbox.</desc>
+        <desc id="diagramDesc">White boxes are the work. Blue boxes are Amazon. A student writes to tutor@theaiguru.dev. Cloudflare, which is not Amazon, holds the DNS. SES receives the mail and later sends the reply. S3 keeps the raw letter. Lambda is the clerk. DynamoDB holds the student card. Secrets Manager holds the model key. A VPC is the private network where grading runs. The reply goes back to the same inbox.</desc>
         <defs>
           <marker id="ah-ink" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
             <path d="M0,0 L7,3 L0,6 Z" fill="#17262c"/>
@@ -256,7 +256,7 @@
 
         <rect class="node" x="16" y="16" width="348" height="76" rx="2"/>
         <text class="label" x="190" y="46" text-anchor="middle">Student’s mailbox</text>
-        <text class="small" x="190" y="70" text-anchor="middle">Writes to tutor@aiguru.dev</text>
+        <text class="small" x="190" y="70" text-anchor="middle">Writes to tutor@theaiguru.dev</text>
 
         <line class="arrow" x1="364" y1="54" x2="416" y2="54" marker-end="url(#ah-ink)"/>
         <rect class="node-other" x="424" y="16" width="300" height="76" rx="2"/>
@@ -528,7 +528,7 @@
     </ul>
 
     <h2>The names on the blue boxes</h2>
-    <p>Skip this if the pictures were enough. It is the same system, with the names an engineer would type. Everything runs in <strong>us-east-1</strong>. DNS for <strong>aiguru.dev</strong> stays at Cloudflare, and Cloudflare Email Routing and Email Sending stay off so they do not take the same MX and SPF records. The MX record points at SES. Bounces use <strong>bounce.aiguru.dev</strong>.</p>
+    <p>Skip this if the pictures were enough. It is the same system, with the names an engineer would type. Everything runs in <strong>us-east-1</strong>. DNS for <strong>theaiguru.dev</strong> stays at Cloudflare, and Cloudflare Email Routing and Email Sending stay off so they do not take the same MX and SPF records. The MX record points at SES. Bounces use <strong>bounce.theaiguru.dev</strong>.</p>
     <ul>
       <li>Problems live in this repo as folders: instructions, a rubric for the reply writer, a checker, and five hidden tickets.</li>
       <li>The student card is a DynamoDB row: email, current problem, whether a grade is in flight, graded tries for the UTC day, last result, and message ids already handled.</li>

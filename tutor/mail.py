@@ -15,7 +15,7 @@ from email.utils import getaddresses, parseaddr
 
 from tutor.clerk import Letter, Zip, receive
 
-TUTOR_ADDRESS = "tutor@aiguru.dev"
+TUTOR_ADDRESS = "tutor@theaiguru.dev"
 REGION = "us-east-1"
 MAILBOX_SIMULATOR = frozenset(
     {
@@ -144,3 +144,8 @@ def deliver(raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None,
     outbound["References"] = message_id
     outbound.set_content(reply.body)
     mail.send(outbound.as_bytes())
+
+
+def answer(stored, cards, *, mail, door, room, ses, model=None, today=None):
+    for raw in stored:
+        deliver(raw, cards, mail=mail, door=door, room=room, ses=ses, model=model, today=today)
