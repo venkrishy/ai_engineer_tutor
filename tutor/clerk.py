@@ -1,6 +1,7 @@
 """Turn a letter into one reply and the updated student card.
 
-A first letter creates the student and replies with the first assignment.
+A first letter creates the student and replies with a welcome, the first
+assignment, and step-by-step instructions for a first submission.
 A zip on that letter is ignored. A later accepted zip is one submission:
 the tutor grades it through the batch and replies on the same thread.
 """
@@ -32,12 +33,16 @@ class Assignment:
         return f"{self.name}\n\n{self.instructions}"
 
 
+HOW_IT_RUNS = "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else."
+
 LADDER = (
     Assignment(
         name="Classify",
         instructions="\n".join(
             [
                 "Read one ticket as JSON and print one JSON object with the ticket id and a label: bug, billing, access, or other.",
+                "",
+                HOW_IT_RUNS,
                 "",
                 "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
                 "",
@@ -51,6 +56,8 @@ LADDER = (
         instructions="\n".join(
             [
                 "Read one ticket as JSON and print one JSON object with the ticket id, a label (bug, billing, access, or other), a priority (P1, P2, P3), and a queue.",
+                "",
+                HOW_IT_RUNS,
                 "",
                 "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
                 "",
@@ -67,6 +74,8 @@ LADDER = (
             [
                 "Read one ticket as JSON and print one JSON object with the ticket id, a label (bug, billing, access, or other), a priority (P1, P2, P3), a queue, and a short customer reply.",
                 "",
+                HOW_IT_RUNS,
+                "",
                 "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
                 "",
                 "Bugs go to engineering, billing goes to billing, and the rest go to support. P1 means work is blocked or money is wrong. P3 is a how-to. P2 is the rest.",
@@ -79,6 +88,56 @@ LADDER = (
         ),
     ),
 )
+
+
+WELCOME = "\n".join(
+    [
+        "Welcome to the AI Engineers Course.",
+        "",
+        "The best way to become a Forward Deployed Engineer (FDE) is to practice writing code with agents. Use any agentic coding tool you like, such as GitHub Copilot or Claude Code.",
+        "",
+        "Your assignment is below. When your code works, reply to this email with it attached as a single zip file.",
+    ]
+)
+
+FIRST_STEPS = "\n".join(
+    [
+        "Since this is your first submission, here is the process step by step.",
+        "",
+        "With Claude Code:",
+        "1. Install it: curl -fsSL https://claude.ai/install.sh | bash",
+        "2. Make an empty folder for this assignment and start Claude Code in it: mkdir classify && cd classify && claude",
+        "3. Paste the assignment above as your prompt, and add: \"Write main.py using only the Python standard library. Test it by piping the sample ticket into python3 main.py. When it works, create classify.zip containing main.py.\"",
+        "4. Read what the agent writes and check the output it printed for the sample ticket.",
+        "5. Check that classify.zip exists (if not, run: zip classify.zip main.py).",
+        "6. Reply to this email with classify.zip attached.",
+        "",
+        "With GitHub Copilot:",
+        "1. Install Visual Studio Code and the GitHub Copilot extension, then sign in to GitHub.",
+        "2. Open an empty folder for this assignment (File > Open Folder).",
+        "3. Open the Copilot Chat view and switch the mode to Agent.",
+        "4. Paste the assignment above as your prompt, and add: \"Write main.py using only the Python standard library. Test it by piping the sample ticket into python3 main.py. When it works, create classify.zip containing main.py.\"",
+        "5. Review the changes and check the output it printed for the sample ticket.",
+        "6. Check that classify.zip exists (if not, run: zip classify.zip main.py).",
+        "7. Reply to this email with classify.zip attached.",
+        "",
+        "The zip rules: one zip per email, 10 MB or less, with main.py at the top or inside a single folder.",
+    ]
+)
+
+WHAT_HAPPENS_NEXT = "\n".join(
+    [
+        "What happens next:",
+        "",
+        "Your code is graded against tickets you have not seen. If you pass, you are promoted and receive the next assignment. If you fail, you get feedback on what to fix, and you can send a new zip on this thread.",
+        "",
+        "You have ten graded tries per day (UTC).",
+    ]
+)
+
+
+def _first_letter_body(assignment: Assignment) -> str:
+    return "\n\n".join([WELCOME, assignment.body, FIRST_STEPS, WHAT_HAPPENS_NEXT])
 
 
 @dataclass(frozen=True)
@@ -324,7 +383,7 @@ def receive(
             card.handled_message_ids.add(letter.message_id)
             card.open_assignment = assignment.name
             ordered.append(letter)
-            bodies[letter.message_id] = assignment.body
+            bodies[letter.message_id] = _first_letter_body(assignment)
             return None
         if not card.finished and _is_accepted_zip(letter):
             card.handled_message_ids.add(letter.message_id)

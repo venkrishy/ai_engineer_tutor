@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from tutor.clerk import Letter, StudentCard, Zip, receive
+from tutor.clerk import FIRST_STEPS, WELCOME, WHAT_HAPPENS_NEXT, Letter, StudentCard, Zip, receive
 from tutor.grading import RoomResult
 
 
@@ -11,12 +11,16 @@ CLASSIFY_BODY = "\n".join(
         "",
         "Read one ticket as JSON and print one JSON object with the ticket id and a label: bug, billing, access, or other.",
         "",
+        "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else.",
+        "",
         "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
         "",
         "Sample ticket:",
         '{"id": "T-100", "subject": "I was charged twice", "body": "My invoice shows two payments for the same month."}',
     ]
 )
+
+FIRST_LETTER_BODY = "\n\n".join([WELCOME, CLASSIFY_BODY, FIRST_STEPS, WHAT_HAPPENS_NEXT])
 
 
 class DoorThatMustStayShut:
@@ -115,6 +119,8 @@ ROUTE_BODY = "\n".join(
         "",
         "Read one ticket as JSON and print one JSON object with the ticket id, a label (bug, billing, access, or other), a priority (P1, P2, P3), and a queue.",
         "",
+        "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else.",
+        "",
         "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
         "",
         "Bugs go to engineering, billing goes to billing, and the rest go to support. P1 means work is blocked or money is wrong. P3 is a how-to. P2 is the rest.",
@@ -128,6 +134,8 @@ REPLY_BODY = "\n".join(
         "Reply",
         "",
         "Read one ticket as JSON and print one JSON object with the ticket id, a label (bug, billing, access, or other), a priority (P1, P2, P3), a queue, and a short customer reply.",
+        "",
+        "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else.",
         "",
         "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
         "",
@@ -157,18 +165,7 @@ class ClerkTest(unittest.TestCase):
                 (
                     "a@example.com",
                     "m1",
-                    "\n".join(
-                        [
-                            "Classify",
-                            "",
-                            "Read one ticket as JSON and print one JSON object with the ticket id and a label: bug, billing, access, or other.",
-                            "",
-                            "Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other.",
-                            "",
-                            "Sample ticket:",
-                            '{"id": "T-100", "subject": "I was charged twice", "body": "My invoice shows two payments for the same month."}',
-                        ]
-                    ),
+                    FIRST_LETTER_BODY,
                 )
             ],
         )
@@ -187,7 +184,7 @@ class ClerkTest(unittest.TestCase):
             room=RoomThatMustStayShut(),
         )
 
-        self.assertEqual(replies[0].body.splitlines()[0], "Classify")
+        self.assertEqual(replies[0].body, FIRST_LETTER_BODY)
         self.assertFalse(cards["a@example.com"].in_flight)
         self.assertEqual(cards["a@example.com"].open_assignment, "Classify")
 
@@ -456,7 +453,7 @@ class ClerkTest(unittest.TestCase):
             room=RoomThatMustStayShut(),
         )
 
-        self.assertEqual(replies[0].body, CLASSIFY_BODY)
+        self.assertEqual(replies[0].body, FIRST_LETTER_BODY)
         card = cards["a@example.com"]
         self.assertEqual(card.open_assignment, "Classify")
         self.assertFalse(card.in_flight)
