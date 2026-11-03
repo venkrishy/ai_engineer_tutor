@@ -1,10 +1,12 @@
 import aws_cdk as cdk
+from aws_cdk import aws_budgets as budgets
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_secretsmanager as secretsmanager
 from aws_cdk import aws_ses as ses
 from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_sns as sns
@@ -96,6 +98,64 @@ class TutorStack(cdk.Stack):
             s3.EventType.OBJECT_CREATED,
             s3n.LambdaDestination(self.clerk),
             s3.NotificationKeyFilter(prefix="raw/"),
+        )
+
+        admin_password = secretsmanager.Secret(
+            self,
+            "AdminPassword",
+            description="Password for the admin dashboard",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                password_length=24, exclude_punctuation=True
+            ),
+        )
+        self.admin = lambda_.Function(
+            self,
+            "Admin",
+            runtime=lambda_.Runtime.PYTHON_3_13,
+            handler="tutor.admin_handler.lambda_handler",
+            code=lambda_.Code.from_asset(
+                "..",
+                ignore_mode=cdk.IgnoreMode.GIT,
+                exclude=["/*", "!/tutor", "__pycache__", "*.pyc"],
+            ),
+            timeout=cdk.Duration.seconds(30),
+            memory_size=256,
+            environment={
+                "TABLE_NAME": self.table.table_name,
+                "MAIL_BUCKET": MAIL_BUCKET,
+                "PASSWORD_SECRET": admin_password.secret_name,
+            },
+        )
+        self.table.grant_read_write_data(self.admin)
+        mail_bucket.grant_read(self.admin, "raw/*")
+        mail_bucket.grant_read_write(self.admin, "assignments/*")
+        admin_password.grant_read(self.admin)
+        admin_url = self.admin.add_function_url(auth_type=lambda_.FunctionUrlAuthType.NONE)
+        cdk.CfnOutput(self, "AdminUrl", value=admin_url.url)
+        cdk.CfnOutput(self, "AdminPasswordSecret", value=admin_password.secret_name)
+
+        budget = budgets.CfnBudget(
+            self,
+            "MonthlyBudget",
+            budget=budgets.CfnBudget.BudgetDataProperty(
+                budget_type="COST",
+                time_unit="MONTHLY",
+                budget_limit=budgets.CfnBudget.SpendProperty(amount=50, unit="USD"),
+                budget_name="tutor-demo",
+            ),
+            notifications_with_subscribers=[
+                budgets.CfnBudget.NotificationWithSubscribersProperty(
+                    notification=budgets.CfnBudget.NotificationProperty(
+                        notification_type="ACTUAL",
+                        comparison_operator="GREATER_THAN",
+                        threshold=80,
+                        threshold_type="PERCENTAGE",
+                    ),
+                    subscribers=[
+                        budgets.CfnBudget.SubscriberProperty(subscription_type="EMAIL", address=OWNER_EMAIL)
+                    ],
+                )
+            ],
         )
 
         alarm = cloudwatch.Alarm(

@@ -194,6 +194,11 @@ class Store:
     def cards(self) -> list[dict]:
         return self._items.scan_sk("CARD")
 
+    def delete_student(self, email: str) -> None:
+        for row in self._items.query(f"STUDENT#{email}"):
+            self._items.delete(row["PK"], row["SK"])
+        self._versions.pop(email, None)
+
     def settings(self) -> dict:
         return self._items.get("SETTINGS", "GLOBAL") or {}
 

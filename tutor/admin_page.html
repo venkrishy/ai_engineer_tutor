@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mail tutor admin</title>
+<style>
+  :root { --ink:#17262c; --muted:#5b6b72; --line:#d9e0e3; --paper:#f7f9fa; --accent:#0b5cad; --bad:#a3262a; --good:#1c7a45; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#e6edf0; --muted:#9fb0b8; --line:#2b3a41; --paper:#10181c; --accent:#6db3f2; --bad:#ff8a8d; --good:#6fd39b; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui, sans-serif; color:var(--ink); background:var(--paper); }
+  header { display:flex; flex-wrap:wrap; gap:12px 24px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:17px; margin:0; }
+  nav button { background:none; border:0; padding:6px 10px; font:inherit; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  nav button.on { color:var(--ink); border-color:var(--accent); }
+  main { padding:20px; max-width:1100px; margin:0 auto; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  tr.click { cursor:pointer; } tr.click:hover { background:rgba(127,127,127,.08); }
+  button.act, input[type=file]::file-selector-button { font:inherit; padding:6px 12px; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:4px; cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  pre { white-space:pre-wrap; background:rgba(127,127,127,.1); padding:12px; border-radius:4px; overflow-x:auto; }
+  .muted { color:var(--muted); } .bad { color:var(--bad); } .good { color:var(--good); }
+  .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; }
+  input[type=password] { font:inherit; padding:7px 10px; border:1px solid var(--line); border-radius:4px; background:transparent; color:var(--ink); }
+  .box { border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:14px 0; }
+  .scroll { overflow-x:auto; }
+</style>
+</head>
+<body>
+<header><h1>Mail tutor admin</h1><nav id="nav" hidden></nav><span id="who" class="muted"></span></header>
+<main id="main"></main>
+<script>
+const $ = (s) => document.querySelector(s);
+const tabs = ["Students", "Letters", "Assignments", "Settings"];
+let tab = "Students";
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) n.append(kid instanceof Node ? kid : document.createTextNode(kid ?? ""));
+  return n;
+}
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (r.status === 401) { showLogin(); throw new Error("signed out"); }
+  return { ok: r.ok, data: await r.json() };
+}
+function table(head, rows, onClick) {
+  return el("div", { class: "scroll" }, el("table", {}, el("thead", {}, el("tr", {}, head.map((h) => el("th", {}, h)))),
+    el("tbody", {}, rows.map((cells, i) => { const tr = el("tr", onClick ? { class: "click", onclick: () => onClick(i) } : {}, cells.map((c) => el("td", {}, c))); return tr; }))));
+}
+const when = (s) => (s ? new Date(s).toLocaleString() : "");
+
+function showLogin() {
+  $("#nav").hidden = true; $("#who").textContent = "";
+  const input = el("input", { type: "password", placeholder: "Admin password", autofocus: "" });
+  const msg = el("span", { class: "bad" });
+  const go = async () => {
+    const r = await fetch("/api/login", { method: "POST", body: JSON.stringify({ password: input.value }) });
+    if (r.ok) start(); else msg.textContent = "Wrong password";
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  $("#main").replaceChildren(el("div", { class: "box" }, el("div", { class: "row" }, input, el("button", { class: "act primary", onclick: go }, "Sign in"), msg)));
+}
+function start() {
+  const nav = $("#nav"); nav.hidden = false;
+  nav.replaceChildren(...tabs.map((t) => el("button", { class: t === tab ? "on" : "", onclick: () => { tab = t; start(); } }, t)));
+  ({ Students: students, Letters: letters, Assignments: assignmentsView, Settings: settings })[tab]();
+}
+async function students() {
+  const { data } = await api("/api/students");
+  $("#main").replaceChildren(
+    el("p", { class: "muted" }, `${data.length} registered. Click a row for history.`),
+    table(["Email", "Assignment", "Level", "In flight", "Tries today", "Last result", "Last letter", "Finished"],
+      data.map((s) => [s.email, s.assignment_name || s.assignment_id, s.open_level ? `${s.open_level} (${s.level_index + 1} of ${s.level_count})` : "", s.in_flight ? "yes" : "no", `${s.graded_tries_today ?? 0}`, s.last_result || "", when(s.last_letter_at), s.finished ? "yes" : "no"]),
+      (i) => student(data[i].email)));
+}
+async function student(address) {
+  const { data } = await api("/api/students/" + encodeURIComponent(address));
+  const reset = el("button", { class: "act", onclick: async () => {
+    if (!confirm("Delete this student and their history? Their next email is treated as a first letter.")) return;
+    await api("/api/students/" + encodeURIComponent(address), { method: "DELETE" }); tab = "Students"; start();
+  } }, "Reset this student");
+  $("#main").replaceChildren(
+    el("div", { class: "row" }, el("button", { class: "act", onclick: () => { tab = "Students"; start(); } }, "Back"), el("strong", {}, address), reset),
+    el("div", { class: "box" }, el("pre", {}, JSON.stringify(data.card, null, 2))),
+    el("h3", {}, "History"),
+    ...data.events.map((e) => el("div", { class: "box" }, el("div", { class: "muted" }, `${when(e.at)}  ${e.kind}`), el("pre", {}, e.detail || ""))));
+}
+async function letters() {
+  const { data } = await api("/api/letters");
+  $("#main").replaceChildren(el("p", { class: "muted" }, "The 25 newest letters saved in S3."),
+    table(["Received", "From", "Subject", "Spam", "Virus", "Attachments", "Size"],
+      data.map((l) => [when(l.at), l.from || "", l.subject || "", l.spam || "", l.virus || "", (l.attachments || []).map((a) => a.name).join(", "), `${l.size} B`]),
+      (i) => letter(data[i].key)));
+}
+async function letter(key) {
+  const { data } = await api("/api/letter/" + key);
+  $("#main").replaceChildren(el("div", { class: "row" }, el("button", { class: "act", onclick: () => { tab = "Letters"; start(); } }, "Back"), el("strong", {}, data.subject)),
+    el("div", { class: "box" }, el("div", {}, "From: " + data.from), el("div", {}, "To: " + data.to), el("div", {}, "Date: " + data.date),
+      el("div", {}, "Attachments: " + (data.attachments.map((a) => `${a.name} (${a.bytes} B)`).join(", ") || "none"))), el("pre", {}, data.body || ""));
+}
+async function assignmentsView() {
+  const { data } = await api("/api/assignments");
+  const file = el("input", { type: "file", accept: ".zip" });
+  const msg = el("div", {});
+  const upload = async () => {
+    if (!file.files[0]) { msg.className = "bad"; msg.textContent = "Choose a zip first."; return; }
+    const r = await api("/api/assignments", { method: "POST", body: await file.files[0].arrayBuffer() });
+    if (r.ok) { msg.className = "good"; msg.textContent = `Uploaded ${r.data.id} as version ${r.data.version} with ${r.data.levels} levels.`; assignmentsView(); }
+    else { msg.className = "bad"; msg.replaceChildren(el("div", {}, "The bundle is not valid:"), ...r.data.problems.map((p) => el("div", {}, "- " + p))); }
+  };
+  $("#main").replaceChildren(
+    el("div", { class: "box" }, el("strong", {}, "Upload an assignment"), el("p", { class: "muted" }, "One zip: assignment.json and a levels folder. Assignments are given in the order number you set."), el("div", { class: "row" }, file, el("button", { class: "act primary", onclick: upload }, "Upload")), msg),
+    ...data.map((a) => el("div", { class: "box" }, el("strong", {}, `${a.order}. ${a.name}`), el("span", { class: "muted" }, `  id ${a.id}, version ${a.version}`),
+      ...a.levels.map((l, i) => el("details", {}, el("summary", {}, `Level ${i + 1}: ${l.name}`), el("pre", {}, l.instructions))))));
+}
+async function settings() {
+  const { data } = await api("/api/settings");
+  const toggle = el("button", { class: "act", onclick: async () => { await api("/api/settings", { method: "POST", body: JSON.stringify({ paused: !data.paused }) }); settings(); } }, data.paused ? "Resume registration" : "Pause registration");
+  $("#main").replaceChildren(el("div", { class: "box" }, el("div", {}, "Registration: ", el("strong", { class: data.paused ? "bad" : "good" }, data.paused ? "paused" : "open")), el("p", { class: "muted" }, "While paused, a new address gets no reply. Known students are still answered."), toggle),
+    el("div", { class: "box" }, el("div", {}, `Graded tries today (UTC): ${data.global_tries_today} of ${data.global_cap}`)));
+}
+fetch("/api/settings").then((r) => (r.ok ? start() : showLogin()));
+</script>
+</body>
+</html>
