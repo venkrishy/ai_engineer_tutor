@@ -1,0 +1,58 @@
+[
+  {
+    "input": {
+      "id": "S-1",
+      "subject": "Refund for a cancelled order",
+      "body": "I cancelled my order last week but the payment is still on my card."
+    },
+    "output": {
+      "id": "S-1",
+      "label": "billing",
+      "priority": "P2",
+      "queue": "billing",
+      "reply": "Hi, thanks for contacting us about S-1. Our billing team is looking into your refund and will follow up soon."
+    }
+  },
+  {
+    "input": {
+      "id": "S-2",
+      "subject": "Password reset email never arrives",
+      "body": "I asked for a new password three times and nothing shows up."
+    },
+    "output": {
+      "id": "S-2",
+      "label": "access",
+      "priority": "P2",
+      "queue": "support",
+      "reply": "Hi, thanks for contacting us about S-2. Our support team is looking into your password reset and will follow up soon."
+    }
+  },
+  {
+    "input": {
+      "id": "S-3",
+      "subject": "App crashes when I upload a photo",
+      "body": "The page shows an error and the whole site is down for me."
+    },
+    "output": {
+      "id": "S-3",
+      "label": "bug",
+      "priority": "P1",
+      "queue": "engineering",
+      "reply": "Hi, thanks for contacting us about S-3. Our engineering team is looking into the crash and will follow up soon."
+    }
+  },
+  {
+    "input": {
+      "id": "S-4",
+      "subject": "How do I export my data?",
+      "body": "I would like a copy of my notes."
+    },
+    "output": {
+      "id": "S-4",
+      "label": "other",
+      "priority": "P3",
+      "queue": "support",
+      "reply": "Hi, thanks for contacting us about S-4. Our support team will send you the steps to export your data soon."
+    }
+  }
+]

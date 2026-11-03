@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Draft the first reply to the customer - Hints and help</title><style>
+:root{--ink:#17262c;--muted:#5b6b72;--accent:#0b5cad;--line:#d9e0e3;--bg:#f4f6f7;--card:#fff;--soft:#eaf3fc;--code:#f3f6f8}
+@media (prefers-color-scheme:dark){:root{--ink:#e6edf0;--muted:#9fb0b8;--accent:#6aaeea;--line:#2b3b42;--bg:#0f171b;--card:#162228;--soft:#14283a;--code:#0d1519}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+header{background:var(--accent);color:#fff;padding:14px 16px}
+header div,main{max-width:760px;margin:0 auto}
+header strong{font-size:17px}
+main{padding:20px 16px 48px}
+.crumb{color:var(--muted);font-size:14px;margin:0 0 4px}
+h1{font-size:28px;line-height:1.25;margin:4px 0 14px}
+h2{font-size:20px;margin:30px 0 10px}
+section,.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:14px 0}
+pre{margin:8px 0;padding:12px 14px;background:var(--code);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:4px;overflow-x:auto;font:13px/1.5 Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+code{font:13px Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:3px}
+pre code{background:none;padding:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}h1{font-size:24px}}
+.label{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+nav a,.button{display:inline-block;margin:0 8px 8px 0;padding:8px 14px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);text-decoration:none;font-weight:600;background:transparent;font-size:15px;cursor:pointer}
+a{color:var(--accent)}
+.button.primary,nav a.primary{background:var(--accent);color:#fff}
+details{margin:10px 0;border:1px solid var(--line);border-radius:6px;padding:10px 14px;background:var(--card)}
+summary{cursor:pointer;font-weight:600}
+.note{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:12px 0}
+</style></head><body><header><div><strong>AI Engineers Course</strong></div></header><main><p class="crumb">Triage tickets &middot; Level 3 of 3 (Reply) &middot; Hints and help</p><h1>Draft the first reply to the customer</h1><nav><a class="primary" href="assignment.html">Assignment</a></nav><p style="margin:0 0 14px"><strong>Try it on your own first.</strong> Open a hint only when you are stuck. The hints grow in strength and none of them gives the answer.</p><h2>Hints</h2><details><summary>Hint 1</summary><p style="margin:0 0 14px">The label, priority, and queue are checked the same way as in Level 2. Get those right before you work on the reply.</p></details><details><summary>Hint 2</summary><p style="margin:0 0 14px">The reply must contain the ticket id, stay under 80 words, and name the team. Use the word refund only when the customer's own text does.</p></details><h2>Still stuck? Use the prompt</h2><p style="margin:0 0 14px">Copy the prompt below and paste it into your coding tool exactly as it is. It holds the whole task, so you do not need to add anything.</p><pre id="prompt">Build a small Python program for me. Do the whole job yourself and do not ask me any questions: every detail you need is below. If something is unclear, make a sensible choice and tell me what you chose at the end.
+
+What to build:
+- One file named main.py in the current folder. Python 3, standard library only, no network calls.
+- It reads ONE support ticket as JSON from standard input. A ticket looks like this:
+  {"id": "T-100", "subject": "I was charged twice", "body": "My invoice shows two payments for the same month."}
+- It prints exactly ONE JSON object to standard output and nothing else (no extra text, no debug lines), like this:
+  {"id": "T-100", "label": "billing", "priority": "P1", "queue": "billing", "reply": "Hi, thanks for contacting us about T-100. Our billing team is looking into the duplicate payment and will follow up soon."}
+- "id" is copied from the ticket. "label" is one of: bug, billing, access, other. "priority" is one of: P1, P2, P3. "queue" is one of: engineering, billing, support. "reply" is a short, friendly message to the customer.
+- Do not hard-code the example. Other tickets with the same three fields (id, subject, body) will be used to check your work.
+
+How to choose the label (use simple keyword rules, not an AI model):
+- Join the subject and the body, lowercase the result, and look for keywords.
+- billing: charge, charged, invoice, refund, payment, billed, billing, receipt
+- access: login, log in, sign in, password, permission, locked out, access
+- bug: broken, crash, error, not working, fails, wrong, bug
+- If more than one group matches, prefer billing first, then access, then bug.
+- If no group matches, the label is "other".
+
+How to choose the queue: bug goes to engineering, billing goes to billing, everything else (access and other) goes to support.
+
+How to choose the priority (use simple keyword rules on the lowercased subject and body, checked in this order):
+- P1 means work is blocked or money is wrong: cannot, can't, unable, locked out, down, outage, twice, duplicate, overcharged, wrong amount.
+- P3 means a how-to question: how do i, how can i, how to, where is, where can i, where do i.
+- P2 is everything else.
+
+How to write the reply (build it from a template, no AI model):
+- It must contain the ticket id (for example T-100).
+- It must be under 80 words. Aim for 25 to 45.
+- Say which team (engineering, billing, or support) is looking at it.
+- Use the word "refund" only when the customer's own subject or body contains the word "refund". Otherwise never write that word.
+- Plain text, polite, no emojis.
+
+After writing main.py:
+1. Test it. Save the example ticket to a file and run it with `python3 main.py &lt; ticket.json`. Show me the output. Then invent two more tickets (a login problem and a crash) and run those too.
+2. When it works, create the zip: run `zip reply.zip main.py`, or use Python's zipfile module if `zip` is not installed. main.py must be at the top of the zip, not inside a folder.
+3. Tell me the full path of reply.zip.</pre><button class="button primary" type="button" onclick="copyPrompt(this)">Copy the prompt</button><h2>Build it with a coding tool</h2><section><p style="margin:0 0 14px"><strong>With Claude Code</strong></p>
+<ol style="margin:0 0 14px;padding-left:24px"><li style="margin:0 0 6px">Install it: <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">curl -fsSL https://claude.ai/install.sh | bash</code></li><li style="margin:0 0 6px">Make an empty folder and start Claude Code in it: <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">mkdir reply &amp;&amp; cd reply &amp;&amp; claude</code></li><li style="margin:0 0 6px">Paste the whole prompt from the box above. Claude Code writes <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">main.py</code>, tests it, and creates <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> for you.</li><li style="margin:0 0 6px">Check that <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> is in the folder. If it is not, run <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">zip reply.zip main.py</code>.</li><li style="margin:0 0 6px">Reply to the tutor's email with <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> attached.</li></ol>
+<p style="margin:0 0 14px"><strong>With GitHub Copilot</strong></p>
+<ol style="margin:0 0 14px;padding-left:24px"><li style="margin:0 0 6px">Install Visual Studio Code and the GitHub Copilot extension, then sign in to GitHub.</li><li style="margin:0 0 6px">Open an empty folder (File &gt; Open Folder).</li><li style="margin:0 0 6px">Open the Copilot Chat view and switch the mode to Agent.</li><li style="margin:0 0 6px">Paste the whole prompt from the box above. Copilot writes <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">main.py</code>, tests it, and creates <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> for you.</li><li style="margin:0 0 6px">Check that <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> is in the folder. If it is not, run <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">zip reply.zip main.py</code>.</li><li style="margin:0 0 6px">Reply to the tutor's email with <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">reply.zip</code> attached.</li></ol></section><nav><a class="primary" href="assignment.html">Assignment</a></nav></main><script>
+async function copyPrompt(button) {
+  const node = document.getElementById("prompt");
+  try { await navigator.clipboard.writeText(node.textContent); button.textContent = "Copied"; }
+  catch (error) {
+    const range = document.createRange(); range.selectNodeContents(node);
+    const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    button.textContent = "Selected. Press Ctrl+C or Cmd+C";
+  }
+}
+</script></body></html>

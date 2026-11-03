@@ -223,6 +223,7 @@ class AdminApp:
                             "instructions": row["instructions"],
                             "prompt": row.get("prompt", ""),
                             "rubric": row.get("rubric", ""),
+                            "hints": row.get("hints", ""),
                         }
                         for row in levels
                     ],

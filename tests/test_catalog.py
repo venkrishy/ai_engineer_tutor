@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from fakes import MemoryBlobs, MemoryItems
 from test_clerk import CLASSIFY_BODY
+from tutor.clerk import level_email
 
 from tutor.catalog import (
     BundleError,
@@ -74,15 +75,23 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual([level.name for level in ladder], ["Classify", "Route", "Reply"])
         self.assertEqual({level.assignment for level in ladder}, {"triage"})
 
-    def test_the_first_level_carries_the_title_the_story_and_the_one_shot_prompt(self):
+    def test_the_first_level_email_carries_the_title_the_story_and_the_page_links_but_not_the_prompt(self):
         self.upload()
+        ladder = load_ladder(self.items)
 
-        body = load_ladder(self.items)[0].body
+        body = level_email(ladder[0], ladder)
 
         self.assertTrue(body.startswith("## Classify incoming support tickets"))
         self.assertIn("Imagine you work for a large enterprise software company", body)
-        self.assertIn("```\nBuild a small Python program for me.", body)
-        self.assertIn("create the zip", body)
+        self.assertIn("assignments/triage/levels/01-classify/assignment.html", body)
+        self.assertNotIn("Build a small Python program for me.", body)
+        self.assertTrue(ladder[0].prompt.startswith("Build a small Python program for me."))
+
+    def test_hints_are_stored_with_the_level(self):
+        data = zip_of(TRIAGE, drop=("levels/01-classify/hints.md",), add={"levels/01-classify/hints.md": "First.\n---\nSecond."})
+        self.upload(data)
+
+        self.assertEqual(load_ladder(self.items)[0].hint_tiers, ["First.", "Second."])
 
     def test_assignments_follow_their_order(self):
         self.upload()

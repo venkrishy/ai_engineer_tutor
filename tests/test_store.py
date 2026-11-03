@@ -26,6 +26,7 @@ class StoreTest(unittest.TestCase):
             graded_tries_today=3,
             graded_day=date(2026, 11, 2),
             last_result="fail",
+            fails_on_level=2,
         )
         self.store.save_card(card)
 
@@ -35,6 +36,7 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(loaded.graded_tries_today, 3)
         self.assertEqual(loaded.graded_day, date(2026, 11, 2))
         self.assertEqual(loaded.last_result, "fail")
+        self.assertEqual(loaded.fails_on_level, 2)
         self.assertEqual(loaded.assignment_id, "triage")
         self.assertIsNotNone(loaded.registered_at)
 

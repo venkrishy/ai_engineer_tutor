@@ -27,6 +27,11 @@ PRE_STYLE = (
 def _inline(text: str) -> str:
     escaped = html.escape(text, quote=False)
     escaped = re.sub(r"`([^`]+)`", rf'<code style="{CODE_STYLE}">\1</code>', escaped)
+    escaped = re.sub(
+        r"\[([^\]]+)\]\((https://[^)\s]+)\)",
+        rf'<a href="\2" style="color:{ACCENT};font-weight:600">\1</a>',
+        escaped,
+    )
     return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
 
 
@@ -110,21 +115,53 @@ def status_for(card: StudentCard | None, ladder: Sequence[Level], today: date) -
     )
 
 
-def render_reply(body: str, status: str) -> tuple[str, str]:
+def progress_for(card: StudentCard | None, ladder: Sequence[Level]) -> tuple[int, int] | None:
+    """Levels cleared and levels in the assignment, or None when there is nothing to show."""
+    if card is None:
+        return None
+    total = sum(1 for level in ladder if level.assignment == card.assignment_id)
+    if not total:
+        return None
+    return (total if card.finished else card.level_index(ladder)), total
+
+
+def _bar(progress: tuple[int, int]) -> str:
+    cleared, total = progress
+    cells = []
+    for index in range(total):
+        colour = ACCENT if index < cleared else "#b9d6f2" if index == cleared else LINE
+        cells.append(
+            f'<td style="height:8px;background:{colour};border-radius:4px;font-size:0;line-height:0">&nbsp;</td>'
+            + ('<td style="width:4px;font-size:0">&nbsp;</td>' if index + 1 < total else "")
+        )
+    position = "All levels cleared" if cleared >= total else f"Level {cleared + 1} of {total}"
+    return (
+        f'<table role="presentation" width="100%" style="border-collapse:collapse;margin:10px 0 0"><tr>{"".join(cells)}</tr></table>'
+        f'<div style="font-size:12.5px;color:{MUTED};margin-top:6px">{position}</div>'
+    )
+
+
+def render_reply(body: str, status: str, progress: tuple[int, int] | None = None) -> tuple[str, str]:
     """The plain-text part and the HTML part of one reply."""
-    text = body + (f"{STATUS_RULE}{status}" if status else "")
+    footer = status
+    if status and progress:
+        cleared, total = progress
+        footer += "\nProgress: [" + "#" * cleared + "-" * (total - cleared) + "]"
+    text = body + (f"{STATUS_RULE}{footer}" if footer else "")
     chip = ""
     if status:
         chip = (
-            f'<div style="background:#eaf3fc;border:1px solid #b9d6f2;border-radius:6px;padding:10px 14px;'
-            f'margin:0 0 20px;color:{INK};font-size:14px">{_inline(status).replace("Your status:", "<strong>Your status:</strong>")}</div>'
+            f'<div style="background:#eaf3fc;border:1px solid #b9d6f2;border-radius:6px;padding:12px 14px;'
+            f'margin:0 0 22px;color:{INK};font-size:14px">{_inline(status).replace("Your status:", "<strong>Your status:</strong>")}'
+            f'{_bar(progress) if progress else ""}</div>'
         )
     page = (
-        '<!doctype html><html><body style="margin:0;padding:0;background:#f4f6f7">'
-        f'<div style="max-width:660px;margin:0 auto;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;'
+        '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+        '<body style="margin:0;padding:0;background:#f4f6f7">'
+        f'<div style="max-width:620px;margin:0 auto;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;'
         f'font-size:15px;line-height:1.55;color:{INK}">'
-        f'<div style="background:{ACCENT};color:#fff;padding:16px 24px;font-size:16px;font-weight:600">AI Engineers Course</div>'
-        f'<div style="background:#fff;padding:24px;border:1px solid {LINE};border-top:0">{chip}{to_html(body)}</div>'
+        f'<div style="background:{ACCENT};color:#fff;padding:16px 24px;font-size:16px;font-weight:600;border-radius:8px 8px 0 0">AI Engineers Course</div>'
+        f'<div style="background:#fff;padding:24px;border:1px solid {LINE};border-top:0;border-radius:0 0 8px 8px">{chip}{to_html(body)}</div>'
         f'<div style="padding:14px 24px;color:{MUTED};font-size:12.5px">'
         "Reply to this email with your zip attached. Each reply stays on the same thread.</div>"
         "</div></body></html>"

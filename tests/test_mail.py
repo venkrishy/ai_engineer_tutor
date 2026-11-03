@@ -7,6 +7,7 @@ from email.message import EmailMessage
 
 from fakes import plain_part
 from test_clerk import (
+    ASSIGNMENT_EMAIL,
     FIRST_LETTER_BODY,
     DoorThatMustStayShut,
     FixedNote,
@@ -14,6 +15,7 @@ from test_clerk import (
     RecordingDoor,
     RoomThatMustStayShut,
 )
+from tutor.clerk import StudentCard
 from tutor.grading import RoomResult
 from tutor.mail import SendRefused, SesSending, answer, deliver, ses_mail, ses_sending
 
@@ -72,13 +74,16 @@ class MailSeamTest(unittest.TestCase):
         card = cards[TESTER]
         self.assertEqual(card.email, TESTER)
         self.assertEqual(card.open_level, "Classify")
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["From"])[1], TUTOR)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
         self.assertEqual(reply["In-Reply-To"], FIRST_MESSAGE_ID)
         self.assertEqual(reply["References"], FIRST_MESSAGE_ID)
         self.assertEqual(plain_part(reply).splitlines(), FIRST_LETTER_BODY.splitlines())
+        second = email.message_from_bytes(mail.sent[1], policy=email.policy.default)
+        self.assertEqual(second["In-Reply-To"], FIRST_MESSAGE_ID)
+        self.assertEqual(plain_part(second).splitlines(), ASSIGNMENT_EMAIL.splitlines())
 
     def test_a_stored_letter_from_the_testers_gmail_is_answered_and_a_setup_note_is_left_alone(self):
         cards = {}
@@ -98,7 +103,7 @@ class MailSeamTest(unittest.TestCase):
         )
 
         self.assertEqual(list(cards), [TESTER])
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
         self.assertEqual(reply["Subject"], "Re: Registration [triage]")
@@ -142,6 +147,28 @@ class MailSeamTest(unittest.TestCase):
         ]
         self.assertEqual(first_lines, ["Pass", "Fail", "Not graded"])
         self.assertEqual(room.graded, list(message_ids))
+
+    def test_finishing_the_last_level_sends_the_result_and_then_a_celebration(self):
+        cards = {TESTER: StudentCard(email=TESTER, open_level="Reply")}
+        mail = MailStandIn()
+        deliver(
+            raw_letter(TESTER, "<finish@mail.gmail.com>", files=(("main.py", b"print(1)\n"),)),
+            cards,
+            mail=mail,
+            door=RecordingDoor(),
+            room=QueuedRoom([RoomResult.PASS]),
+            model=FixedNote("Nicely done."),
+            today=date(2026, 11, 2),
+            ses=verified_for(TESTER),
+        )
+
+        bodies = [
+            plain_part(email.message_from_bytes(raw, policy=email.policy.default)) for raw in mail.sent
+        ]
+        self.assertEqual(len(bodies), 2)
+        self.assertEqual(bodies[0].splitlines()[0], "Pass")
+        self.assertIn("Congratulations", bodies[1])
+        self.assertIn("Progress: [###]", email.message_from_bytes(mail.sent[1], policy=email.policy.default).get_body(("plain",)).get_content())
 
     def test_the_reply_is_sent_to_the_address_the_letter_came_from(self):
         sender = "other.student@example.com"
@@ -206,7 +233,7 @@ class MailSeamTest(unittest.TestCase):
             ses=SesSending(production_access=False, verified=frozenset()),
         )
 
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], sender)
 
@@ -223,7 +250,7 @@ class MailSeamTest(unittest.TestCase):
             ses=SesSending(production_access=False, verified=frozenset({"theaiguru.dev"})),
         )
 
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], sender)
 
@@ -240,7 +267,7 @@ class MailSeamTest(unittest.TestCase):
             ses=SesSending(production_access=True, verified=frozenset()),
         )
 
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], sender)
 
@@ -265,7 +292,7 @@ class MailSeamTest(unittest.TestCase):
             ses=verified_for(TESTER),
         )
 
-        self.assertEqual(len(mail.sent), 1)
+        self.assertEqual(len(mail.sent), 2)
         self.assertEqual(list(cards), [TESTER])
 
     def test_the_ses_port_sends_the_raw_reply_from_the_tutor_in_us_east_1(self):

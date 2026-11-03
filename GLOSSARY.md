@@ -41,7 +41,7 @@ _Avoid_: response, notification
 ## The work
 
 **Assignment**:
-One course assignment the tutor gives a student, such as triaging tickets. An assignment is a ladder of levels. The email that opens an assignment holds the prompt for its first level.
+One course assignment the tutor gives a student, such as triaging tickets. An assignment is a ladder of levels. The email that opens an assignment holds the goal of its first level and links to its pages.
 _Avoid_: problem, exercise
 
 **Level**:
@@ -51,6 +51,14 @@ _Avoid_: problem, step, stage
 **Ladder**:
 The ordered levels of one assignment, walked one open at a time.
 _Avoid_: sequence, course, track
+
+**Assignment page** and **Hints and help page**:
+The two static pages of a level, published by GitHub Pages and linked from the email. The Assignment page holds the goal, samples, rules, how to test, and the zip layout. The Hints and help page holds the hints and the one-shot prompt.
+_Avoid_: lesson, guide
+
+**Hint**:
+A nudge sent with a Fail. Each failed try on a level gets the next hint, then a pointer to the prompt. A hint never gives an answer.
+_Avoid_: clue, answer
 
 **Checker**:
 The tutor's judge of a submission.

@@ -1,18 +1,20 @@
 """Turn a letter into one reply and the updated student card.
 
-A first letter creates the student and replies with a welcome, the first
-level, and step-by-step instructions for a first submission.
+A first letter creates the student and gets two emails: a short welcome, then
+the first level with links to its pages. Finishing the last level adds a third.
 A zip on that letter is ignored. A later accepted zip is one submission:
 the tutor grades it through the batch and replies on the same thread.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from typing import Protocol
 
+from tutor.links import assignment_url, hints_url
 from tutor.grading import (
     Door,
     Outcome,
@@ -23,9 +25,9 @@ from tutor.grading import (
     run_batch,
 )
 
-PROMPT_INTRO = (
-    "**Your prompt.** Copy everything in the box below and paste it into your coding tool "
-    "exactly as it is. It holds the whole task, so you do not need to add anything."
+TRY_FIRST = (
+    "**Try it on your own first.** Build it with the coding tool you like, then email me the zip. "
+    "Everything you need is on these two pages:"
 )
 
 
@@ -39,17 +41,62 @@ class Level:
     prompt: str = ""
     rubric: str = ""
     assignment_name: str = ""
+    hints: str = ""
 
     @property
     def body(self) -> str:
-        if not self.prompt:
-            return f"{self.name}\n\n{self.instructions}"
-        parts = [f"## {self.title or self.name}"]
-        if self.context:
-            parts.append(self.context)
-        parts.append(self.instructions)
-        parts.append(f"{PROMPT_INTRO}\n\n```\n{self.prompt}\n```")
-        return "\n\n".join(parts)
+        """The level as plain text, for a level that has no prompt and so no pages."""
+        return f"{self.name}\n\n{self.instructions}"
+
+    @property
+    def hint_tiers(self) -> list[str]:
+        """The hints in the order they are given, one per failed try."""
+        return [tier.strip() for tier in re.split(r"\n\s*---\s*\n", self.hints) if tier.strip()]
+
+
+def _position(level: Level, ladder: Sequence[Level]) -> int:
+    """Where the level sits among the levels of its assignment, counting from 1."""
+    mine = [item for item in ladder if item.assignment == level.assignment]
+    return mine.index(level) + 1 if level in mine else 1
+
+
+def level_email(level: Level, ladder: Sequence[Level]) -> str:
+    """The level as it goes into an email: the story, the goal, and links to its two pages."""
+    if not level.prompt:
+        return level.body
+    position = _position(level, ladder)
+    parts = [f"## {level.title or level.name}"]
+    if level.context:
+        parts.append(level.context)
+    parts.append(level.instructions)
+    parts.append(
+        "\n".join(
+            [
+                TRY_FIRST,
+                "",
+                f"- [Assignment]({assignment_url(level.assignment, position, level.name)}): the goal, sample tickets, what to print, and how to test",
+                f"- [Hints and help]({hints_url(level.assignment, position, level.name)}): hints, and a ready-made prompt if you get stuck",
+            ]
+        )
+    )
+    return "\n\n".join(parts)
+
+
+def hint_for(level: Level, ladder: Sequence[Level], fails: int) -> str:
+    """A nudge that grows with the number of failed tries on this level. It never gives an answer."""
+    position = _position(level, ladder)
+    page = assignment_url(level.assignment, position, level.name)
+    help_page = hints_url(level.assignment, position, level.name)
+    tiers = level.hint_tiers
+    if fails > 2 and (not tiers or fails > len(tiers)):
+        return (
+            "**Still stuck?** The "
+            f"[Hints and help]({help_page}) page has a ready-made prompt. "
+            "Paste it into your coding tool and it will build the whole level for you."
+        )
+    if fails <= len(tiers):
+        return f"**Hint {fails}.** {tiers[fails - 1]} More on [Hints and help]({help_page})."
+    return f"**Hint {fails}.** Compare your output with the examples on the [Assignment]({page}) page, then check the rules once more."
 
 
 HOW_IT_RUNS = "Your program is main.py. The grader runs it once per ticket with `python3 main.py`, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else."
@@ -115,32 +162,17 @@ WELCOME = "\n".join(
         "",
         "The best way to become a Forward Deployed Engineer (FDE) is to practice building real things with AI coding agents. Use any agentic coding tool you like, such as Claude Code or GitHub Copilot.",
         "",
-        "Here is how it works. I send you an assignment, one level at a time. You build it with your tool and email me the code as a single zip file. I grade it against tickets you have not seen, then reply on this same thread with the result and your next level.",
+        "Here is how it works. I send you an assignment, one level at a time. You build it and email me the code as a single zip file. I grade it against tickets you have not seen, then reply on this same thread with the result and your next level.",
         "",
-        "Your first level is below.",
+        "Your first assignment follows in a separate email.",
     ]
 )
 
 FIRST_STEPS = "\n".join(
     [
-        "**How to submit, step by step**",
+        "**How to submit**",
         "",
-        "With Claude Code:",
-        "1. Install it: `curl -fsSL https://claude.ai/install.sh | bash`",
-        "2. Make an empty folder and start Claude Code in it: `mkdir classify && cd classify && claude`",
-        "3. Paste the whole prompt from the box above. Claude Code writes `main.py`, tests it, and creates `classify.zip` for you.",
-        "4. Check that `classify.zip` is in the folder. If it is not, run `zip classify.zip main.py`.",
-        "5. Reply to this email with `classify.zip` attached.",
-        "",
-        "With GitHub Copilot:",
-        "1. Install Visual Studio Code and the GitHub Copilot extension, then sign in to GitHub.",
-        "2. Open an empty folder (File > Open Folder).",
-        "3. Open the Copilot Chat view and switch the mode to Agent.",
-        "4. Paste the whole prompt from the box above. Copilot writes `main.py`, tests it, and creates `classify.zip` for you.",
-        "5. Check that `classify.zip` is in the folder. If it is not, run `zip classify.zip main.py`.",
-        "6. Reply to this email with `classify.zip` attached.",
-        "",
-        "**Zip rules:** one zip per email, 10 MB or less, with `main.py` at the top or inside a single folder.",
+        "When your program works, zip it so that `main.py` is at the top, or inside a single folder. Reply to this email with the zip attached. One zip per email, 10 MB or less.",
     ]
 )
 
@@ -148,17 +180,39 @@ WHAT_HAPPENS_NEXT = "\n".join(
     [
         "**What happens next**",
         "",
-        "Your code is graded against tickets you have not seen. If you pass, you move up a level and I send you the next one. If you fail, you get notes on what to fix, and you can send a new zip on this thread.",
+        "Your code is graded against tickets you have not seen. If you pass, you move up a level and I send you the next one. If you fail, you get notes and a hint, and you can send a new zip on this thread.",
         "",
         "You have five graded tries per day (UTC).",
     ]
 )
 
-DEFAULT_TEMPLATES = {"welcome": WELCOME, "steps": FIRST_STEPS, "next": WHAT_HAPPENS_NEXT}
+FINISH = "\n".join(
+    [
+        "**Congratulations. You cleared every level.**",
+        "",
+        "You went from an overflowing support inbox to a program that classifies, routes, and answers tickets, and you built it with an AI coding agent. That is the everyday work of a Forward Deployed Engineer.",
+        "",
+        "**Where to go from here**",
+        "",
+        "- Build the same levels again with a different coding tool and compare the results.",
+        "- Add your own tickets to your program and see where the rules break.",
+        "- Watch this thread. New assignments are added here.",
+    ]
+)
+
+DEFAULT_TEMPLATES = {"welcome": WELCOME, "steps": FIRST_STEPS, "next": WHAT_HAPPENS_NEXT, "finish": FINISH}
 
 
-def _first_letter_body(level: Level, templates: Mapping[str, str]) -> str:
-    return "\n\n".join([templates["welcome"], level.body, templates["steps"], templates["next"]])
+def _template(templates: Mapping[str, str], name: str) -> str:
+    return templates.get(name) or DEFAULT_TEMPLATES[name]
+
+
+def _welcome_email(templates: Mapping[str, str]) -> str:
+    return "\n\n".join([_template(templates, "welcome"), _template(templates, "next")])
+
+
+def _assignment_email(level: Level, ladder: Sequence[Level], templates: Mapping[str, str]) -> str:
+    return "\n\n".join([level_email(level, ladder), _template(templates, "steps")])
 
 
 @dataclass(frozen=True)
@@ -188,6 +242,7 @@ class StudentCard:
     finished: bool = False
     registered_at: str | None = None
     last_letter_at: str | None = None
+    fails_on_level: int = 0
 
     def level_index(self, ladder: Sequence[Level] = LADDER) -> int:
         """Position of the open level among the levels of its assignment."""
@@ -203,6 +258,7 @@ class Reply:
     email: str
     message_id: str
     body: str
+    extra: tuple[str, ...] = ()
 
 
 MAX_ZIP_BYTES = 10 * 1024 * 1024
@@ -276,8 +332,8 @@ def _asks_for_a_single_zip(letter: Letter) -> bool:
 def _open_level_body(card: StudentCard, ladder: Sequence[Level]) -> str:
     for level in ladder:
         if level.assignment == card.assignment_id and level.name == card.open_level:
-            return level.body
-    return ladder[0].body
+            return level_email(level, ladder)
+    return level_email(ladder[0], ladder)
 
 
 def _level_after(card: StudentCard, name: str, ladder: Sequence[Level]) -> Level | None:
@@ -339,6 +395,8 @@ def _bodies_for_results(
     adapter: _RoomAdapter,
     model: Model | None,
     ladder: Sequence[Level],
+    templates: Mapping[str, str],
+    extras: dict[str, tuple[str, ...]],
 ) -> dict[str, str]:
     by_id = {item.message_id: item for item in result.items}
     bodies: dict[str, str] = {}
@@ -348,22 +406,29 @@ def _bodies_for_results(
         _remember_quota(card, quotas[letter.email])
         if item.outcome is Outcome.PASS:
             card.last_result = "pass"
+            card.fails_on_level = 0
             note = model.note(level_name, "pass") if model is not None else ""
             nxt = _level_after(card, level_name, ladder)
             if nxt is None:
                 card.finished = True
-                trailer = "The ladder is finished."
+                trailer = ""
+                extras[letter.message_id] = (_template(templates, "finish"),)
             else:
                 card.open_level = nxt.name
                 card.assignment_id = nxt.assignment
-                trailer = nxt.body
+                trailer = level_email(nxt, ladder)
             parts = ["Pass", note, trailer]
             bodies[letter.message_id] = "\n\n".join(part for part in parts if part)
         elif item.outcome is Outcome.FAIL:
             card.last_result = "fail"
+            card.fails_on_level += 1
             findings = adapter.findings.get(letter.message_id, "")
             note = model.note(level_name, "fail", findings) if model is not None else ""
-            parts = ["Fail", note, _truncate_findings(findings)]
+            failed = next(
+                (lv for lv in ladder if lv.assignment == card.assignment_id and lv.name == level_name),
+                ladder[0],
+            )
+            parts = ["Fail", note, _truncate_findings(findings), hint_for(failed, ladder, card.fails_on_level)]
             bodies[letter.message_id] = "\n\n".join(part for part in parts if part)
         elif item.outcome is Outcome.NOT_GRADED:
             card.last_result = "not graded"
@@ -389,6 +454,7 @@ def receive(
     today = today or datetime.now(timezone.utc).date()
     ordered: list[Letter] = []
     bodies: dict[str, str] = {}
+    extras: dict[str, tuple[str, ...]] = {}
     submissions: list[tuple[Letter, str]] = []
     claimed: set[str] = set()
     seen: set[str] = set()
@@ -419,7 +485,8 @@ def receive(
             card.handled_message_ids.add(letter.message_id)
             card.open_level = level.name
             ordered.append(letter)
-            bodies[letter.message_id] = _first_letter_body(level, templates)
+            bodies[letter.message_id] = _welcome_email(templates)
+            extras[letter.message_id] = (_assignment_email(level, ladder, templates),)
             return None
         if not card.finished and _is_accepted_zip(letter):
             card.handled_message_ids.add(letter.message_id)
@@ -469,7 +536,10 @@ def receive(
         )
         bodies.update(
             _bodies_for_results(
-                submissions, cards, quotas, result, adapter, model, ladder
+                submissions, cards, quotas, result, adapter, model, ladder, templates, extras
             )
         )
-    return [Reply(letter.email, letter.message_id, bodies[letter.message_id]) for letter in ordered]
+    return [
+        Reply(letter.email, letter.message_id, bodies[letter.message_id], extras.get(letter.message_id, ()))
+        for letter in ordered
+    ]

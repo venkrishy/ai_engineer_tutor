@@ -8,6 +8,7 @@ An assignment is uploaded as one zip bundle:
   levels/01-classify/instructions.md   what the student will build, in a sentence or two
   levels/01-classify/prompt.md     the one-shot prompt the student pastes into their coding tool
   levels/01-classify/rubric.md     optional: what the note writer should look for
+  levels/01-classify/hints.md      optional: one hint per failed try, separated by lines of ---
   levels/01-classify/tickets.json  five {"input": {...}, "expected": {...}, "good": {...}}
                                    ("good" is a full right answer, only needed when the
                                    expected fields alone are not one)
@@ -58,8 +59,8 @@ class BundleError(Exception):
         self.problems = problems
 
 
-LEVEL_TEXT_FIELDS = ("title", "context", "instructions", "prompt", "rubric")
-TEMPLATE_NAMES = ("welcome", "steps", "next")
+LEVEL_TEXT_FIELDS = ("title", "context", "instructions", "prompt", "rubric", "hints")
+TEMPLATE_NAMES = ("welcome", "steps", "next", "finish")
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,7 @@ class LevelFiles:
     context: str = ""
     prompt: str = ""
     rubric: str = ""
+    hints: str = ""
 
 
 @dataclass(frozen=True)
@@ -201,6 +203,7 @@ def parse_bundle(data: bytes) -> Bundle:
                 text("context.md"),
                 prompt,
                 text("rubric.md"),
+                text("hints.md"),
             )
         )
     if problems:
@@ -259,6 +262,7 @@ def save_bundle(items, blobs: Blobs, bundle: Bundle) -> int:
             "instructions": level.instructions,
             "prompt": level.prompt,
             "rubric": level.rubric,
+            "hints": level.hints,
             "tickets_key": f"{prefix}/tickets.json",
         }
         if level.checker is not None:
@@ -301,6 +305,7 @@ def load_ladder(items) -> tuple[Level, ...]:
                     row.get("prompt", ""),
                     row.get("rubric", ""),
                     meta["name"],
+                    row.get("hints", ""),
                 )
             )
     return tuple(ladder)

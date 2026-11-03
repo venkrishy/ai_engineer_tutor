@@ -13,7 +13,7 @@ from test_clerk import DoorThatMustStayShut, RoomThatMustStayShut
 
 from tutor.clerk import LADDER, Level, StudentCard
 from tutor.mail import deliver
-from tutor.render import render_reply, status_for, to_html
+from tutor.render import progress_for, render_reply, status_for, to_html
 
 TODAY = date(2026, 11, 2)
 TRIAGE = (
@@ -108,3 +108,29 @@ class HeadingTest(unittest.TestCase):
         self.assertIn("<h2", page)
         self.assertIn("Classify tickets</h2>", page)
         self.assertEqual(page.count("<p "), 1)
+
+
+class LinkAndProgressTest(unittest.TestCase):
+    def test_a_markdown_link_becomes_an_anchor(self):
+        page = to_html("Open [the page](https://example.com/a?x=1&y=2) now")
+
+        self.assertIn('<a href="https://example.com/a?x=1&amp;y=2"', page)
+        self.assertIn(">the page</a>", page)
+
+    def test_only_https_links_become_anchors(self):
+        self.assertNotIn("<a ", to_html("[x](javascript:alert(1))"))
+
+    def test_progress_counts_cleared_levels(self):
+        card = StudentCard(email="a@example.com", open_level="Route")
+
+        self.assertEqual(progress_for(card, TRIAGE), (1, 3))
+        card.finished = True
+        self.assertEqual(progress_for(card, TRIAGE), (3, 3))
+        self.assertIsNone(progress_for(None, TRIAGE))
+
+    def test_the_reply_shows_the_progress_in_both_parts(self):
+        text, page = render_reply("Pass", "Your status: x", (1, 3))
+
+        self.assertTrue(text.endswith("Progress: [#--]"))
+        self.assertIn("Level 2 of 3", page)
+        self.assertEqual(page.count("<td style=\"height:8px"), 3)

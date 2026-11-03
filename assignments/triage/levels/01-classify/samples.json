@@ -1,0 +1,46 @@
+[
+  {
+    "input": {
+      "id": "S-1",
+      "subject": "Refund for a cancelled order",
+      "body": "I cancelled my order last week but the payment is still on my card."
+    },
+    "output": {
+      "id": "S-1",
+      "label": "billing"
+    }
+  },
+  {
+    "input": {
+      "id": "S-2",
+      "subject": "Password reset email never arrives",
+      "body": "I asked for a new password three times and nothing shows up."
+    },
+    "output": {
+      "id": "S-2",
+      "label": "access"
+    }
+  },
+  {
+    "input": {
+      "id": "S-3",
+      "subject": "App crashes when I upload a photo",
+      "body": "The page shows an error and the whole site is down for me."
+    },
+    "output": {
+      "id": "S-3",
+      "label": "bug"
+    }
+  },
+  {
+    "input": {
+      "id": "S-4",
+      "subject": "How do I export my data?",
+      "body": "I would like a copy of my notes."
+    },
+    "output": {
+      "id": "S-4",
+      "label": "other"
+    }
+  }
+]

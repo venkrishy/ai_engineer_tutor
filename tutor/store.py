@@ -134,6 +134,7 @@ class Store:
             finished=bool(item.get("finished", False)),
             registered_at=item.get("registered_at"),
             last_letter_at=item.get("last_letter_at"),
+            fails_on_level=int(item.get("fails_on_level", 0)),
         )
 
     def save_card(self, card: StudentCard, ladder: Sequence[Level] = LADDER) -> None:
@@ -152,6 +153,7 @@ class Store:
             "finished": card.finished,
             "registered_at": card.registered_at,
             "last_letter_at": card.last_letter_at,
+            "fails_on_level": card.fails_on_level,
             "version": self._versions.get(card.email, -1) + 1,
         }
         for name in ("open_level", "last_result"):
