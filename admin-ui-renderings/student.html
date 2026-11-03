@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<div class="crumb"><a href="students.html">Students</a> / <span id="crumb"></span></div>
+<h1 id="name"></h1><p class="sub" id="meta"></p>
+<div class="grid cols-4" id="stats"></div>
+<div class="grid cols-2" style="margin-top:16px">
+  <div class="card"><h2>Letter history</h2><ul class="timeline" id="tl"></ul></div>
+  <div>
+    <div class="card"><h2>Tutor note on latest result</h2><p id="note" style="margin:0"></p></div>
+    <div class="card" style="margin-top:16px"><div class="tabs"><button class="on" data-t="raw">Raw email</button><button data-t="reply">Reply sent</button></div><div id="pane"></div></div>
+  </div>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("students.html");
+const s = STUDENTS.find(x => x.id === new URLSearchParams(location.search).get("id")) || STUDENTS[0];
+document.title = s.name + " - Tutor Desk";
+document.getElementById("crumb").textContent = s.name;
+document.getElementById("name").textContent = s.name;
+document.getElementById("meta").textContent = `${s.email}  |  Joined ${s.joined}  |  Assignment: Triage tickets`;
+document.getElementById("stats").innerHTML = [
+  [`Level ${Math.min(s.level,3)} of 3`, LEVELS[s.level-1]], [s.cleared, "Levels cleared"], [`${s.tries} / 5`, "Graded tries today"], [s.status, "Status"],
+].map(([n, l]) => `<div class="card stat"><div class="n" style="font-size:24px">${n}</div><div class="l">${l}</div></div>`).join("");
+const events = [
+  ["pass", s.last, "Result: " + (s.result === "None" ? "no submission yet" : s.result), "Zip received, graded in a sandbox against 5 hidden tickets."],
+  ["sent", "Earlier", "Reply sent: next level email", "Includes status line and progress bar."],
+  ["", "Earlier", "Letter received: classify.zip (2 KB)", "Contains main.py."],
+  ["sent", s.joined + " 09:01", "Welcome email sent", "First assignment and prompt."],
+  ["", s.joined + " 09:01", "Registered", "First letter from this address."],
+];
+document.getElementById("tl").innerHTML = events.map(([c, t, h, d], i) =>
+  `<li class="${i === 0 ? (s.result === "Fail" ? "fail" : s.result === "Pass" ? "pass" : "") : c}"><time>${t}</time><b>${h}</b><div style="color:var(--muted);font-size:14px">${d}</div></li>`).join("");
+document.getElementById("note").textContent = s.result === "Fail"
+  ? "Two of the five tickets were labeled wrongly. Check how the program treats tickets that mention both a charge and a login problem. (Findings never reveal the hidden answers.)"
+  : "All tickets handled correctly. The labels match the ticket text.";
+const panes = {
+  raw: `<pre>From: ${esc(s.name)} &lt;${esc(s.email)}&gt;
+To: Tutor &lt;tutor@example.dev&gt;
+Subject: Re: Your first assignment [triage]
+X-SES-Spam-Verdict: PASS
+X-SES-Virus-Verdict: PASS
+Authentication-Results: dkim=pass; dmarc=pass
+
+Here is my zip.
+[attachment: classify.zip]</pre>`,
+  reply: `<pre>Subject: Re: Your first assignment [triage]
+
+${s.result}
+
+Your status: Triage tickets, Level ${Math.min(s.level,3)} of 3 (${LEVELS[s.level-1]}).
+Levels cleared: ${s.cleared}. Graded tries left today: ${5 - s.tries} of 5.</pre>`,
+};
+const pane = document.getElementById("pane"); pane.innerHTML = panes.raw;
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b)); pane.innerHTML = panes[b.dataset.t];
+});
+</script></body></html>
