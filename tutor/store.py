@@ -177,7 +177,7 @@ class Store:
         self._items.put(
             {
                 "PK": f"STUDENT#{email}",
-                "SK": f"EVENT#{now}#{message_id}",
+                "SK": f"EVENT#{now}#{kind}#{message_id}",
                 "kind": kind,
                 "message_id": message_id,
                 "at": now,

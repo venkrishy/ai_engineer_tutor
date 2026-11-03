@@ -56,6 +56,10 @@ def _zip_for(incoming) -> tuple[Zip | None, int | None]:
     return Zip(filenames, len(payload)), None
 
 
+def sender_of(incoming) -> str:
+    return parseaddr(incoming.get("From", ""))[1].strip().lower()
+
+
 def _addressed_to_tutor(incoming) -> bool:
     recipients = {
         addr.strip().lower()
@@ -107,8 +111,8 @@ def ses_mail(factory=None) -> SesMail:
 def deliver(raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None, today=None):
     incoming = email.message_from_bytes(raw)
     if not _addressed_to_tutor(incoming):
-        return
-    sender = parseaddr(incoming.get("From", ""))[1].strip().lower()
+        return None
+    sender = sender_of(incoming)
     verified = {item.strip().lower() for item in ses.verified}
     domain = sender.rsplit("@", 1)[-1]
     allowed = (
@@ -130,20 +134,22 @@ def deliver(raw: bytes, cards, *, mail, door, room, ses: SesSending, model=None,
         today=today,
     )
     if not replies:
-        return
+        return None
     reply = replies[0]
     outbound = EmailMessage()
     outbound["From"] = TUTOR_ADDRESS
     subject = incoming.get("Subject") or ""
-    if subject.lower().startswith("re:"):
-        outbound["Subject"] = subject
-    else:
-        outbound["Subject"] = f"Re: {subject}" if subject else "Re:"
+    if not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}" if subject else "Re:"
+    card = cards.get(sender)
+    tag = f"[{card.assignment_id}]" if card is not None else ""
+    outbound["Subject"] = f"{subject} {tag}" if tag and tag not in subject else subject
     outbound["To"] = reply.email
     outbound["In-Reply-To"] = message_id
     outbound["References"] = message_id
     outbound.set_content(reply.body)
     mail.send(outbound.as_bytes())
+    return reply.body
 
 
 def answer(stored, cards, *, mail, door, room, ses, model=None, today=None):

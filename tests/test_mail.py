@@ -100,7 +100,7 @@ class MailSeamTest(unittest.TestCase):
         self.assertEqual(len(mail.sent), 1)
         reply = email.message_from_bytes(mail.sent[0], policy=email.policy.default)
         self.assertEqual(email.utils.parseaddr(reply["To"])[1], TESTER)
-        self.assertEqual(reply["Subject"], "Re: Registration")
+        self.assertEqual(reply["Subject"], "Re: Registration [triage]")
         self.assertEqual(reply["In-Reply-To"], FIRST_MESSAGE_ID)
         self.assertEqual(reply.get_content().splitlines(), FIRST_LETTER_BODY.splitlines())
 
