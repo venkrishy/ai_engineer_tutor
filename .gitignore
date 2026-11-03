@@ -1,3 +1,6 @@
 node_modules/
 __pycache__/
 *.pyc
+venv/
+cdk.out/
+.pytest_cache/

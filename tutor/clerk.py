@@ -165,6 +165,8 @@ class StudentCard:
     graded_day: date | None = None
     last_result: str | None = None
     finished: bool = False
+    registered_at: str | None = None
+    last_letter_at: str | None = None
 
     @property
     def level_index(self) -> int:
