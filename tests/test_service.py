@@ -59,7 +59,7 @@ class ServiceTest(unittest.TestCase):
         result = run(raw_letter(TESTER, "<m1@x>"), self.store, self.mail)
 
         self.assertEqual(result, "handled")
-        self.assertEqual(len(self.mail.sent), 1)
+        self.assertEqual(len(self.mail.sent), 2)
         card = self.store.load_card(TESTER)
         self.assertEqual(card.open_level, "Classify")
         self.assertEqual(body_of(self.mail.sent[0]).rstrip(), FIRST_LETTER_BODY)
@@ -74,14 +74,14 @@ class ServiceTest(unittest.TestCase):
         run(raw, self.store, self.mail)
 
         self.assertEqual(run(raw, self.store, self.mail), "duplicate")
-        self.assertEqual(len(self.mail.sent), 1)
+        self.assertEqual(len(self.mail.sent), 2)
 
     def test_a_second_letter_finds_the_saved_student_and_gets_the_bare_assignment(self):
         run(raw_letter(TESTER, "<m1@x>"), self.store, self.mail)
         run(raw_letter(TESTER, "<m2@x>"), self.store, self.mail)
 
-        self.assertEqual(len(self.mail.sent), 2)
-        self.assertNotIn("Welcome to the AI Engineers Course", body_of(self.mail.sent[1]))
+        self.assertEqual(len(self.mail.sent), 3)
+        self.assertNotIn("Welcome to the AI Engineers Course", body_of(self.mail.sent[2]))
 
     def test_a_refused_send_releases_the_letter_so_it_can_be_tried_again(self):
         raw = raw_letter(TESTER, "<m1@x>")
@@ -182,7 +182,7 @@ class ServiceTest(unittest.TestCase):
         result = run(raw_letter(TESTER, "<m2@x>"), self.store, self.mail)
 
         self.assertEqual(result, "handled")
-        self.assertEqual(len(self.mail.sent), 2)
+        self.assertEqual(len(self.mail.sent), 3)
 
     def test_a_graded_try_counts_toward_the_global_cap(self):
         run(raw_letter(TESTER, "<m1@x>"), self.store, self.mail)

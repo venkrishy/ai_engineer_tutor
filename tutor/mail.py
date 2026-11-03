@@ -15,7 +15,7 @@ from email.message import EmailMessage
 from email.utils import getaddresses, parseaddr
 
 from tutor.clerk import DEFAULT_TEMPLATES, LADDER, Letter, Zip, receive
-from tutor.render import render_reply, status_for
+from tutor.render import progress_for, render_reply, status_for
 
 TUTOR_ADDRESS = "tutor@theaiguru.dev"
 REGION = "us-east-1"
@@ -165,22 +165,26 @@ def deliver(
     if not replies:
         return None
     reply = replies[0]
-    outbound = EmailMessage()
-    outbound["From"] = TUTOR_ADDRESS
     subject = incoming.get("Subject") or ""
     if not subject.lower().startswith("re:"):
         subject = f"Re: {subject}" if subject else "Re:"
     card = cards.get(sender)
     tag = f"[{card.assignment_id}]" if card is not None else ""
-    outbound["Subject"] = f"{subject} {tag}" if tag and tag not in subject else subject
-    outbound["To"] = reply.email
-    outbound["In-Reply-To"] = message_id
-    outbound["References"] = message_id
-    text, page = render_reply(reply.body, status_for(card, ladder, today or datetime.now(timezone.utc).date()))
-    outbound.set_content(text)
-    outbound.add_alternative(page, subtype="html")
-    mail.send(outbound.as_bytes())
-    return reply.body
+    subject = f"{subject} {tag}" if tag and tag not in subject else subject
+    status = status_for(card, ladder, today or datetime.now(timezone.utc).date())
+    progress = progress_for(card, ladder)
+    for body in (reply.body, *reply.extra):
+        outbound = EmailMessage()
+        outbound["From"] = TUTOR_ADDRESS
+        outbound["Subject"] = subject
+        outbound["To"] = reply.email
+        outbound["In-Reply-To"] = message_id
+        outbound["References"] = message_id
+        text, page = render_reply(body, status, progress)
+        outbound.set_content(text)
+        outbound.add_alternative(page, subtype="html")
+        mail.send(outbound.as_bytes())
+    return "\n\n".join((reply.body, *reply.extra))
 
 
 def answer(stored, cards, *, mail, door, room, ses, model=None, today=None):

@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from tutor.clerk import FIRST_STEPS, WELCOME, WHAT_HAPPENS_NEXT, Letter, StudentCard, Zip, receive
+from tutor.clerk import FINISH, FIRST_STEPS, LADDER, WELCOME, WHAT_HAPPENS_NEXT, Level, Letter, StudentCard, Zip, hint_for, level_email, receive
 from tutor.grading import RoomResult
 
 
@@ -20,7 +20,10 @@ CLASSIFY_BODY = "\n".join(
     ]
 )
 
-FIRST_LETTER_BODY = "\n\n".join([WELCOME, CLASSIFY_BODY, FIRST_STEPS, WHAT_HAPPENS_NEXT])
+WELCOME_EMAIL = "\n\n".join([WELCOME, WHAT_HAPPENS_NEXT])
+ASSIGNMENT_EMAIL = "\n\n".join([CLASSIFY_BODY, FIRST_STEPS])
+FIRST_LETTER_BODY = WELCOME_EMAIL
+GENERIC_HINT = "**Hint 1.** Compare your output with the examples on the [Assignment](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/01-classify/assignment.html) page, then check the rules once more."
 
 
 class DoorThatMustStayShut:
@@ -169,6 +172,7 @@ class ClerkTest(unittest.TestCase):
                 )
             ],
         )
+        self.assertEqual(replies[0].extra, (ASSIGNMENT_EMAIL,))
         card = cards["a@example.com"]
         self.assertEqual(card.email, "a@example.com")
         self.assertEqual(card.open_level, "Classify")
@@ -518,7 +522,7 @@ class ClerkTest(unittest.TestCase):
             today=TODAY,
         )
 
-        self.assertEqual(replies[0].body, "\n\n".join(["Fail", NOTE, findings]))
+        self.assertEqual(replies[0].body, "\n\n".join(["Fail", NOTE, findings, GENERIC_HINT]))
         card = cards["a@example.com"]
         self.assertEqual(card.open_level, "Classify")
         self.assertEqual(card.last_result, "fail")
@@ -546,7 +550,8 @@ class ClerkTest(unittest.TestCase):
             today=TODAY,
         )
 
-        _fail_line, note, carried = replies[0].body.split("\n\n", 2)
+        _fail_line, note, rest = replies[0].body.split("\n\n", 2)
+        carried = rest.rsplit("\n\n", 1)[0]
         self.assertEqual(note, "NOTE-START keep this note NOTE-END")
         self.assertEqual(len(carried.encode("utf-8")), 8 * 1024)
         self.assertTrue(carried.startswith("FINDINGS-START"))
@@ -626,10 +631,8 @@ class ClerkTest(unittest.TestCase):
             today=TODAY,
         )
 
-        self.assertEqual(
-            replies[0].body,
-            "\n\n".join(["Pass", NOTE, "The ladder is finished."]),
-        )
+        self.assertEqual(replies[0].body, "\n\n".join(["Pass", NOTE]))
+        self.assertEqual(replies[0].extra, (FINISH,))
         card = cards["a@example.com"]
         self.assertTrue(card.finished)
         self.assertEqual(card.open_level, "Reply")
@@ -1148,3 +1151,58 @@ class ClerkTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+HINTED = (
+    Level("Classify", "x", "triage", prompt="p", hints="Look at the billing words.\n---\nCheck the order of the rules."),
+) + LADDER[1:]
+
+
+class HintAndFinishTest(unittest.TestCase):
+    def test_each_failed_try_gets_the_next_hint_and_then_points_to_the_prompt(self):
+        card = StudentCard(email="a@example.com", open_level="Classify")
+        bodies = []
+        for _ in range(3):
+            cards = {"a@example.com": card}
+            replies = receive(
+                [Letter("a@example.com", f"m{len(bodies)}", Zip(("main.py",), 100))],
+                cards,
+                door=RecordingDoor(),
+                room=ScriptedRoom(RoomGrade(RoomResult.FAIL, "expected label bug, got other")),
+                today=TODAY,
+                ladder=HINTED,
+            )
+            bodies.append(replies[0].body)
+
+        self.assertIn("**Hint 1.** Look at the billing words.", bodies[0])
+        self.assertIn("**Hint 2.** Check the order of the rules.", bodies[1])
+        self.assertIn("**Still stuck?**", bodies[2])
+        self.assertIn("hints-and-help.html", bodies[2])
+        self.assertEqual(card.fails_on_level, 3)
+
+    def test_a_pass_clears_the_count_of_failed_tries(self):
+        card = StudentCard(email="a@example.com", open_level="Classify", fails_on_level=2)
+        receive(
+            [Letter("a@example.com", "m1", Zip(("main.py",), 100))],
+            {"a@example.com": card},
+            door=RecordingDoor(),
+            room=ScriptedRoom(RoomGrade(RoomResult.PASS)),
+            today=TODAY,
+        )
+
+        self.assertEqual(card.fails_on_level, 0)
+        self.assertEqual(card.open_level, "Route")
+
+    def test_a_hint_never_repeats_the_findings_and_a_level_without_hints_gets_a_generic_one(self):
+        self.assertTrue(hint_for(LADDER[0], LADDER, 1).startswith("**Hint 1.** Compare your output"))
+        self.assertTrue(hint_for(LADDER[0], LADDER, 3).startswith("**Still stuck?**"))
+
+    def test_the_level_email_links_both_pages_and_leaves_out_the_prompt(self):
+        level = Level("Route", "Goal.", "triage", title="Route tickets", context="Story.", prompt="SECRET PROMPT")
+        ladder = (LADDER[0], level)
+        email = level_email(level, ladder)
+
+        self.assertIn("## Route tickets", email)
+        self.assertIn("(https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/02-route/assignment.html)", email)
+        self.assertIn("(https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/02-route/hints-and-help.html)", email)
+        self.assertNotIn("SECRET PROMPT", email)

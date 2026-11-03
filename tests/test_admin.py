@@ -157,6 +157,7 @@ class EditingTest(AdminTest):
 
     def test_a_level_can_be_edited_and_the_ladder_shows_it(self):
         from tutor.catalog import load_ladder
+        from tutor.clerk import level_email
 
         self.call("POST", "/api/assignments", zip_of(TRIAGE))
 
@@ -165,7 +166,7 @@ class EditingTest(AdminTest):
         self.assertEqual(done.status, 200)
         level = load_ladder(self.items)[0]
         self.assertEqual((level.title, level.rubric), ("New title", "Be kind."))
-        self.assertIn("## New title", level.body)
+        self.assertIn("## New title", level_email(level, load_ladder(self.items)))
 
     def test_a_level_cannot_lose_its_prompt(self):
         self.call("POST", "/api/assignments", zip_of(TRIAGE))

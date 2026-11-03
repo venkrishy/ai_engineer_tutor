@@ -119,7 +119,7 @@ async function assignmentsView() {
     ...data.map((a) => el("div", { class: "box" }, el("strong", {}, `${a.order}. ${a.name}`), el("span", { class: "muted" }, `  id ${a.id}, version ${a.version}`),
       ...a.levels.map((l, i) => levelEditor(a, l, i)))));
 }
-const FIELDS = [["title", "Title in the email", 1], ["context", "Story (context paragraph)", 5], ["instructions", "What the student will build", 3], ["prompt", "One-shot prompt the student pastes", 18], ["rubric", "Rubric for the note writer", 5]];
+const FIELDS = [["title", "Title in the email", 1], ["context", "Story (context paragraph)", 5], ["instructions", "What the student will build", 3], ["prompt", "One-shot prompt (shown on the Hints and help page)", 18], ["rubric", "Rubric for the note writer", 5], ["hints", "Hints, one per failed try (separate with a line of ---)", 6]];
 function levelEditor(a, l, i) {
   const boxes = {};
   const msg = el("span", {});
@@ -136,7 +136,7 @@ function levelEditor(a, l, i) {
 }
 async function emails() {
   const { data } = await api("/api/templates");
-  const labels = { welcome: "Welcome (top of the first email)", steps: "Step-by-step submit guide (first email)", next: "What happens next (first email)" };
+  const labels = { welcome: "Welcome email: opening", next: "Welcome email: what happens next", steps: "Assignment email: how to submit", finish: "Celebration email (last level passed)" };
   $("#main").replaceChildren(el("p", { class: "muted" }, "Text you can use: **bold**, `code`, lists starting with - or 1., and blank lines between paragraphs."),
     ...Object.keys(labels).map((name) => {
       const box = el("textarea", { rows: "12", style: "width:100%;font:13px/1.45 ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--ink)" });
