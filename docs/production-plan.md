@@ -1,6 +1,6 @@
 # Production plan
 
-Ticket: #6. Status: revised after the owner's answers, waiting for approval to create the tickets. No code changes come with this plan.
+Ticket: #6. Status: approved, tickets #7 to #17 created. No code changes come with this plan.
 
 Goal: a proof of concept that the owner can demo to executives, who test drive it by emailing `tutor@theaiguru.dev` from their own addresses, and an admin dashboard where the owner sees students, letters, and uploads assignments.
 
@@ -138,42 +138,34 @@ The executives also need to read the welcome email and succeed with Claude Code 
 
 ## Tickets, in order
 
-Each is a vertical slice that can be shown working. Branch per ticket, stacked, as in `AGENTS.md`. Numbers are assigned when the issues are created.
+Branch per ticket, stacked, as in `AGENTS.md`.
 
-| # | Title | Done when |
-| --- | --- | --- |
-| 7 | Rename assignment to level in the clerk | The code, tests, and card field match the glossary. No change in behavior. |
-| 8 | Student cards persist in DynamoDB | `receive()` runs against a DynamoDB-backed card store. The same message id twice still gives one reply. Tests use an in-memory fake of the store, plus one run against a real table. |
-| 9 | A letter in S3 gets a reply without anyone running a script | S3 event, SQS, clerk Lambda, SES, all in CDK. The owner emails from Gmail and receives the welcome. Dead-letter queue and alarm included. |
-| 10 | SES production access, bounces, and the invite list | Access requested and granted. Bounces and complaints go to SNS and mark an address undeliverable. DKIM and DMARC are checked. A letter from an address that is not invited is not graded. |
-| 11 | Admin dashboard, read only | Cognito sign-in. The Students and Letters pages read DynamoDB and S3. |
-| 12 | The assignment comes from the catalog | The levels are read from DynamoDB and S3. "Triage tickets" is seeded. The first letter's reply holds the active assignment's level 1 prompt. Same replies as today. |
-| 13 | Upload an assignment from the dashboard | Validated upload, versioned, mark active, goes live without a deploy. |
-| 14 | The checker and the five hidden tickets for Classify | A checker runs a sample solution and a bad solution locally and returns pass and fail with findings. Route and Reply follow in the same shape. |
-| 15 | A real room | Code Interpreter on the private network runs a zip against the checker. Three-minute limit, no public internet. Any room failure is not graded. Start as a spike. |
-| 16 | A real door and a batch | The interface endpoint opens, is shared, and is deleted on every path. Sweeper and alarm. |
-| 17 | A submission is graded end to end | The owner emails a zip and receives pass, fail, or not graded. The model writes the note. The dashboard shows the result. |
-| 18 | Demo readiness | Budget alarm, dry run with a colleague, a one-page runbook, and the invite list loaded with the executives. |
-
-Tickets 7 to 11 make the first half of the demo real with no grading: an executive writes in and receives the welcome with the level 1 prompt, and the owner sees them on the dashboard. Tickets 14 to 17 are the largest and riskiest. If they slip, the fallback in D6 keeps a demo possible.
+| Issue | Title |
+| --- | --- |
+| #7 | Rename assignment to level in the clerk |
+| #8 | Student cards persist in DynamoDB |
+| #9 | A letter in S3 gets a reply without anyone running a script |
+| #10 | Anyone who writes in is registered and welcomed, safely |
+| #11 | Admin dashboard, read only |
+| #12 | The assignment comes from the catalog |
+| #13 | Upload an assignment from the dashboard |
+| #14 | The checker and hidden tickets for Triage tickets |
+| #15 | A room runs a student's zip in AgentCore Code Interpreter |
+| #16 | A submission is graded end to end with a Bedrock note |
+| #17 | Demo readiness |
 
 ## Decisions
 
 Settled by the owner:
 
-- Assignment, level, and ladder as defined above. Triage tickets is one assignment with three levels. The first email carries the level 1 prompt.
-- Infrastructure as code: AWS CDK in Python.
-- Admin sign-in: Cognito.
-- Batch trigger: a schedule every few minutes.
-- Tests: in-memory fakes already used, plus one real-AWS smoke test per ticket, no mocking framework.
-- Build the dashboard, with a view of DynamoDB and S3 data and a simple assignment upload.
-
-Open:
-
-- D1. How a new student gets an assignment when there are several. Proposed: the admin marks one assignment active, and a first letter opens it. After a student finishes it, the reply says they are finished, as today. Choosing among assignments can come later.
-- D6. Whether grading must be the real private room for the demo. The room and door design in the tracer plan is the strongest isolation, and the heaviest to build. A lighter option is to run each zip in a locked-down container with no network, which is much less work, but the student's code could then not call the model as the tracer plan allows. Decide before ticket 15.
-- D7. What a letter from a sender who is not invited receives: a short refusal or silence. Proposed: silence, because it avoids replying to spoofed addresses.
-- D8. Region and account: confirm everything stays in us-east-1, account 908196778839.
+- Everything stays on AWS (Cloudflare holds only DNS). The owner wants practice with AgentCore and has AWS credits to spend on Bedrock.
+- Assignment, level, and ladder as defined above. Assignments follow a fixed, predefined order, each with a fixed ladder of levels. The assignment id travels in the subject, like `[triage] Classify`, and the student card stays the source of truth.
+- AWS CDK in Python, Cognito for admin sign-in, tests with in-memory fakes plus one real-AWS check per ticket, no mocking framework.
+- Isolation: the lightest that works. A room is an AgentCore Code Interpreter session. A spike showed it runs `python3 main.py` with the ticket on stdin and has no internet (DNS fails). The private door and the VPC are dropped. The student program does not call the model. The checker runs outside the session, so the answer key never enters it.
+- The model writes the note through Bedrock with a cross-region inference profile (`us.anthropic.claude-sonnet-4-6`).
+- Anyone who writes in is registered and gets the welcome. The invite list is dropped. Safeguards instead: reply only when the letter passed SES spam, virus, SPF and DKIM checks; a global daily cap on graded tries; a pause-registration switch.
+- Sandbox for now: the demo recipients are verified SES identities. Production access is requested later, see `docs/ses-production-access.md` (ticket #10).
+- Batch trigger: with no door to open, a letter is graded as it arrives. The batch logic stays and runs with a no-op door.
 
 ## Risks
 
