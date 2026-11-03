@@ -1,15 +1,15 @@
 # Mail tutor
 
-A tutor that reaches a student only by email. The student receives an assignment, sends code back, and gets a result on that same thread.
+A tutor that reaches a student only by email. The student receives the first level of an assignment, sends code back, and gets a result on that same thread.
 
 ## People
 
 **Student**:
-A person identified by the email address they write from. A student has at most one open assignment.
+A person identified by the email address they write from. A student has at most one open level.
 _Avoid_: user, account
 
 **Student card**:
-The stored facts for one student: email, open assignment, whether a grade is in flight, graded tries for the UTC day, last result, and letters already handled.
+The stored facts for one student: email, open assignment, open level, whether a grade is in flight, graded tries for the UTC day, last result, and letters already handled.
 _Avoid_: profile, account
 
 **In flight**:
@@ -17,7 +17,7 @@ A student whose submission is being graded in a room.
 _Avoid_: locked, busy
 
 **Finished**:
-A student who has passed the last assignment on the ladder.
+A student who has passed the last level of their assignment.
 _Avoid_: complete, graduated
 
 ## Mail
@@ -41,11 +41,15 @@ _Avoid_: response, notification
 ## The work
 
 **Assignment**:
-One exercise the tutor asks a student to complete, such as triaging tickets.
-_Avoid_: problem
+One course assignment the tutor gives a student, such as triaging tickets. An assignment is a ladder of levels. The email that opens an assignment holds the prompt for its first level.
+_Avoid_: problem, exercise
+
+**Level**:
+One rung of an assignment's ladder, such as Classify, Route, or Reply. A student builds one level, sends the code back, and moves up only on a pass.
+_Avoid_: problem, step, stage
 
 **Ladder**:
-The ordered assignments a student walks, one open at a time.
+The ordered levels of one assignment, walked one open at a time.
 _Avoid_: sequence, course, track
 
 **Checker**:
