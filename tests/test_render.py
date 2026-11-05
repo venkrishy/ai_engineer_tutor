@@ -134,3 +134,10 @@ class LinkAndProgressTest(unittest.TestCase):
         self.assertTrue(text.endswith("Progress: [#--]"))
         self.assertIn("Level 2 of 3", page)
         self.assertEqual(page.count("<td style=\"height:8px"), 3)
+
+    def test_the_submit_reminder_is_left_off_once_every_level_is_cleared(self):
+        _, open_page = render_reply("Pass", "Your status: x", (1, 3))
+        _, finished_page = render_reply("Pass", "Your status: x", (3, 3))
+
+        self.assertIn("Reply to this email with your zip attached", open_page)
+        self.assertNotIn("Reply to this email with your zip attached", finished_page)

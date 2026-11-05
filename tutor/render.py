@@ -141,8 +141,15 @@ def _bar(progress: tuple[int, int]) -> str:
     )
 
 
+_SUBMIT_HINT = (
+    f'<div style="padding:14px 24px;color:{MUTED};font-size:12.5px">'
+    "Reply to this email with your zip attached. Each reply stays on the same thread.</div>"
+)
+
+
 def render_reply(body: str, status: str, progress: tuple[int, int] | None = None) -> tuple[str, str]:
     """The plain-text part and the HTML part of one reply."""
+    finished = bool(progress) and progress[0] >= progress[1]
     footer = status
     if status and progress:
         cleared, total = progress
@@ -162,8 +169,7 @@ def render_reply(body: str, status: str, progress: tuple[int, int] | None = None
         f'font-size:15px;line-height:1.55;color:{INK}">'
         f'<div style="background:{ACCENT};color:#fff;padding:16px 24px;font-size:16px;font-weight:600;border-radius:8px 8px 0 0">AI Engineers Course</div>'
         f'<div style="background:#fff;padding:24px;border:1px solid {LINE};border-top:0;border-radius:0 0 8px 8px">{chip}{to_html(body)}</div>'
-        f'<div style="padding:14px 24px;color:{MUTED};font-size:12.5px">'
-        "Reply to this email with your zip attached. Each reply stays on the same thread.</div>"
+        f"{'' if finished else _SUBMIT_HINT}"
         "</div></body></html>"
     )
     return text, page
