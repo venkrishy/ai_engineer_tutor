@@ -45,9 +45,29 @@ The student builds the program with Claude Code, GitHub Copilot or any tool they
 
 <p align="center"><img src="docs/flow/04-student-submits-zip.png" alt="The student replies with classify.zip attached" width="520"></p>
 
-### 5. The tutor grades and replies
+### 5. The tutor grades and opens the next level
 
-The zip runs in a sandbox against tickets the student has never seen. The reply starts with **Pass**, **Fail** or **Not graded**, adds a short note written by an LLM, and either opens the next level or gives a hint.
+The zip runs in a sandbox against tickets the student has never seen. The reply starts with **Pass**, **Fail** or **Not graded**, adds a short note written by an LLM, and, on a pass, opens the next level in the same email. The status box moves up and the progress bar fills.
+
+<p align="center"><img src="docs/flow/05-pass-level-1-next-level.png" alt="Pass on Level 1, with the Level 2 assignment" width="420"></p>
+
+### 6. Level 2: Route
+
+The student builds the next level and replies with `route.zip`.
+
+<p align="center"><img src="docs/flow/06-student-submits-route-zip.png" alt="The student replies with route.zip" width="520"></p>
+
+Another pass moves them to Level 3. Graded tries left today drops with each submission.
+
+<p align="center"><img src="docs/flow/07-pass-level-2-next-level.png" alt="Pass on Level 2, with the Level 3 assignment" width="420"></p>
+
+### 7. Level 3: Reply
+
+The last level asks for a customer reply, and the student submits `reply.zip`.
+
+<p align="center"><img src="docs/flow/08-student-submits-reply-zip.png" alt="The student replies with reply.zip" width="520"></p>
+
+A pass on the last level sends a celebration email.
 
 > **Earlier look:** the first version of the welcome email was a single plain message. See [docs/flow/earlier-welcome-email-v1.png](docs/flow/earlier-welcome-email-v1.png) for how far the design has come.
 
