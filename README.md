@@ -83,13 +83,21 @@ Then a separate celebration email arrives, with ideas for what to do next.
 
 **Triage tickets** is the first assignment. It has three levels, each a rung on a ladder.
 
-| Level | Name | The program must... |
-| :---: | --- | --- |
-| 1 | **Classify** | read one support ticket and tag it `bug`, `billing`, `access` or `other` |
-| 2 | **Route** | send the ticket to the right team |
-| 3 | **Reply** | draft a reply to the customer (checked by a custom checker) |
+| Level | Name | The program must... | Pages |
+| :---: | --- | --- | --- |
+| 1 | **Classify** | read one support ticket and tag it `bug`, `billing`, `access` or `other` | [Assignment](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/01-classify/assignment.html), [Hints and help](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/01-classify/hints-and-help.html) |
+| 2 | **Route** | send the ticket to the right team and give it a priority | [Assignment](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/02-route/assignment.html), [Hints and help](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/02-route/hints-and-help.html) |
+| 3 | **Reply** | draft a short customer reply (checked by a custom checker) | [Assignment](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/03-reply/assignment.html), [Hints and help](https://venkrishy.github.io/ai_engineer_tutor/assignments/triage/levels/03-reply/hints-and-help.html) |
 
-Each level has its own **Assignment** page (goal, sample tickets, expected output, zip layout, how to test) and **Hints and help** page (tiered hints, plus a ready-made prompt for students who are stuck). The pages are generated from files in [`assignments/`](assignments/) and published with GitHub Pages.
+Each level has two pages, linked from the emails. The pages are generated from files in [`assignments/`](assignments/) and published with GitHub Pages.
+
+**Assignment page:** the goal, sample tickets with the expected output, the zip layout, and how to test.
+
+<p align="center"><img src="docs/flow/11-assignment-page.png" alt="The Level 1 Assignment page" width="520"></p>
+
+**Hints and help page:** hints that grow in strength (none gives the answer), and a ready-made prompt for students who are stuck.
+
+<p align="center"><img src="docs/flow/12-hints-and-help-page.png" alt="The Level 1 Hints and help page" width="520"></p>
 
 A level is passed when the program gets **4 of 5 hidden tickets** right. The hidden tickets never leave S3, and the student's sandbox only ever sees ticket inputs.
 
