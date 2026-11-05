@@ -16,6 +16,14 @@ from constructs import Construct
 
 MAIL_BUCKET = "tutor-mail-theaiguru-908196778839"
 OWNER_EMAIL = "venkrishy@gmail.com"
+SENDING_DOMAIN = "theaiguru.dev"
+SENDER_ADDRESS = "tutor@theaiguru.dev"
+CONFIGURATION_SET = "tutor"
+
+# AWS puts an account under review at 5% bounces and 0.1% complaints, and pauses
+# sending at 10% and 0.5%. These alarms fire well before the review line.
+BOUNCE_RATE_ALARM = 0.03
+COMPLAINT_RATE_ALARM = 0.0005
 
 
 class TutorStack(cdk.Stack):
@@ -38,7 +46,14 @@ class TutorStack(cdk.Stack):
         alerts = sns.Topic(self, "Alerts")
         alerts.add_subscription(subscriptions.EmailSubscription(OWNER_EMAIL))
 
-        configuration_set = ses.ConfigurationSet(self, "ConfigurationSet", configuration_set_name="tutor")
+        configuration_set = ses.ConfigurationSet(
+            self,
+            "ConfigurationSet",
+            configuration_set_name=CONFIGURATION_SET,
+            sending_enabled=True,
+            reputation_metrics=True,
+            suppression_reasons=ses.SuppressionReasons.BOUNCES_AND_COMPLAINTS,
+        )
         configuration_set.add_event_destination(
             "BouncesAndComplaints",
             destination=ses.EventDestination.sns_topic(alerts),
@@ -65,9 +80,22 @@ class TutorStack(cdk.Stack):
         )
         self.table.grant_read_write_data(self.clerk)
         mail_bucket.grant_read(self.clerk, "raw/*")
+        # Sending is limited to our own identity and configuration set. The two
+        # read calls below do not support resource-level permissions.
+        ses_arn = f"arn:aws:ses:{self.region}:{self.account}"
         self.clerk.add_to_role_policy(
             iam.PolicyStatement(
-                actions=["ses:SendEmail", "ses:SendRawEmail", "ses:GetAccount", "ses:ListEmailIdentities"],
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=[
+                    f"{ses_arn}:identity/{SENDING_DOMAIN}",
+                    f"{ses_arn}:identity/{SENDER_ADDRESS}",
+                    f"{ses_arn}:configuration-set/{CONFIGURATION_SET}",
+                ],
+            )
+        )
+        self.clerk.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:GetAccount", "ses:ListEmailIdentities"],
                 resources=["*"],
             )
         )
@@ -170,3 +198,34 @@ class TutorStack(cdk.Stack):
             alarm_description="A letter could not be answered.",
         )
         alarm.add_alarm_action(cw_actions.SnsAction(alerts))
+
+        for alarm_id, metric_name, threshold, description in (
+            (
+                "SesBounceRate",
+                "Reputation.BounceRate",
+                BOUNCE_RATE_ALARM,
+                "SES bounce rate is approaching the 5% review line.",
+            ),
+            (
+                "SesComplaintRate",
+                "Reputation.ComplaintRate",
+                COMPLAINT_RATE_ALARM,
+                "SES complaint rate is approaching the 0.1% review line.",
+            ),
+        ):
+            rate_alarm = cloudwatch.Alarm(
+                self,
+                alarm_id,
+                metric=cloudwatch.Metric(
+                    namespace="AWS/SES",
+                    metric_name=metric_name,
+                    statistic="Maximum",
+                    period=cdk.Duration.hours(1),
+                ),
+                threshold=threshold,
+                evaluation_periods=1,
+                comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+                alarm_description=description,
+            )
+            rate_alarm.add_alarm_action(cw_actions.SnsAction(alerts))
