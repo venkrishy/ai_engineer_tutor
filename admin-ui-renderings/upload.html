@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Upload assignment - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<div class="crumb"><a href="assignments.html">Assignments</a> / Upload</div>
+<h1>Upload an assignment</h1><p class="sub">Drop one zip. It is checked before it goes live, and live assignments are versioned.</p>
+<div class="grid cols-2">
+  <div>
+    <div class="card"><div class="drop" id="drop"><b>Drag the bundle zip here</b><br>or <button class="btn ghost" id="pick" type="button" style="margin-top:8px">Choose file</button><br><small id="fn">No file yet. Try the sample: <a href="#" id="sample">summarize.zip</a></small></div></div>
+    <div class="card" style="margin-top:16px"><h2>What the bundle contains</h2>
+<div class="treeview">summarize.zip
+|-- assignment.json
+`-- levels/
+    |-- 01-summarize/
+    |   |-- level.json
+    |   |-- context.md       (the story)
+    |   |-- instructions.md  (what the student does)
+    |   |-- prompt.md        (one-shot prompt)
+    |   |-- rubric.md        (for the tutor note)
+    |   `-- tickets.json     (5 hidden tests)
+    `-- 02-.../</div></div>
+  </div>
+  <div class="card"><h2>Validation</h2><div id="checks"><p class="sub" style="margin:0">Waiting for a bundle.</p></div>
+    <div class="toolbar" style="margin:16px 0 0"><span id="ver" style="color:var(--muted);font-size:13px"></span><span class="spacer"></span><button class="btn" id="live" type="button" disabled>Save as draft</button></div></div>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("upload.html");
+const drop = document.getElementById("drop"), checks = document.getElementById("checks"), live = document.getElementById("live");
+const STEPS = [
+  ["assignment.json parses, 2 levels in order", ""],
+  ["Every level has context, instructions, prompt and rubric", ""],
+  ["Exactly 5 hidden tickets per level, all parse", "Tickets stay in private storage, never in the repo."],
+  ["Checker passes a known-good answer", "Run in a sandbox with no internet."],
+  ["Checker fails a known-bad answer", "Confirms the checker can say no."],
+  ["Hidden tickets differ from the sample tickets on the public pages", ""],
+];
+function run(name) {
+  document.getElementById("fn").textContent = name + " (4.2 KB)";
+  live.disabled = true; document.getElementById("ver").textContent = "";
+  checks.innerHTML = STEPS.map(([t, s]) => `<div class="check run"><span class="ic">...</span><div>${t}${s ? `<small>${s}</small>` : ""}</div></div>`).join("");
+  [...checks.children].forEach((el, i) => setTimeout(() => {
+    el.className = "check ok"; el.querySelector(".ic").textContent = "ok";
+    if (i === STEPS.length - 1) { live.disabled = false; document.getElementById("ver").textContent = "Will be saved as summarize, version 1"; toast("Bundle passed all checks"); }
+  }, 450 * (i + 1)));
+}
+["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", ev => run(ev.dataTransfer.files[0]?.name || "bundle.zip"));
+document.getElementById("pick").onclick = () => run("summarize.zip");
+document.getElementById("sample").onclick = ev => { ev.preventDefault(); run("summarize.zip"); };
+live.onclick = () => { toast("Saved as draft. Make it live from Assignments (demo)."); setTimeout(() => location = "assignments.html", 900); };
+</script></body></html>

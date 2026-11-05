@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<div class="demo-banner">Demo day view. Sample data, nothing is connected.</div>
+<h1>Dashboard</h1><p class="sub">How the demo is going: who signed up, where they are on the Triage tickets assignment, and what is left of today's caps.</p>
+
+<div class="grid cols-4">
+  <div class="card stat"><div class="n">8</div><div class="l">Registered students</div><div class="d">+3 today</div></div>
+  <div class="card stat"><div class="n">13</div><div class="l">Graded tries today</div><div class="d">of 100 global cap</div></div>
+  <div class="card stat"><div class="n">62%</div><div class="l">Pass rate today</div><div class="d">8 of 13 graded</div></div>
+  <div class="card stat"><div class="n">1</div><div class="l">Finished the assignment</div><div class="d">Level 3 cleared</div></div>
+</div>
+
+<div class="grid cols-2" style="margin-top:16px">
+  <div class="card"><h2>Funnel: Triage tickets</h2>
+    <div class="funnel" id="funnel"></div></div>
+  <div class="card"><h2>Graded tries today (hourly)</h2>
+    <svg id="spark" viewBox="0 0 400 140" style="width:100%;height:auto" role="img" aria-label="Graded tries per hour"></svg>
+    <p class="sub" style="margin:6px 0 0;font-size:13px">Global cap: 13 of 100 used. Per student cap: 5.</p></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2>Latest activity</h2>
+  <div class="tablewrap"><table><thead><tr><th>Student</th><th>Level</th><th>Result</th><th>When</th></tr></thead><tbody id="recent"></tbody></table></div>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("index.html");
+const reached = [8, 6, 2, 1];
+const labels = ["Registered", "Reached Level 2", "Reached Level 3", "Finished"];
+document.getElementById("funnel").innerHTML = reached.map((n, i) =>
+  `<div class="row"><span>${labels[i]}</span><div class="bar"><i style="width:${n / 8 * 100}%"></i></div><b>${n}</b></div>`).join("");
+const hours = [0,0,0,0,0,0,1,2,3,4,3,0];
+const max = Math.max(...hours), w = 400 / hours.length;
+document.getElementById("spark").innerHTML = hours.map((h, i) =>
+  `<rect x="${i*w+4}" y="${130 - h/max*110}" width="${w-8}" height="${h/max*110}" rx="4" fill="var(--brand)"/><text x="${i*w+w/2}" y="138" text-anchor="middle" font-size="9" fill="var(--muted)">${i*2}h</text>`).join("");
+document.getElementById("recent").innerHTML = STUDENTS.slice(0,5).map(s =>
+  `<tr class="click" onclick="location='student.html?id=${s.id}'"><td>${esc(s.name)}</td><td>${LEVELS[s.level-1]}</td><td><span class="pill ${pillFor(s.result)}">${s.result}</span></td><td>${s.last}</td></tr>`).join("");
+</script></body></html>

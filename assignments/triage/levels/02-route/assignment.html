@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Route each ticket to the right team and priority - Assignment</title><style>
+:root{--ink:#17262c;--muted:#5b6b72;--accent:#0b5cad;--line:#d9e0e3;--bg:#f4f6f7;--card:#fff;--soft:#eaf3fc;--code:#f3f6f8}
+@media (prefers-color-scheme:dark){:root{--ink:#e6edf0;--muted:#9fb0b8;--accent:#6aaeea;--line:#2b3b42;--bg:#0f171b;--card:#162228;--soft:#14283a;--code:#0d1519}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+header{background:var(--accent);color:#fff;padding:14px 16px}
+header div,main{max-width:760px;margin:0 auto}
+header strong{font-size:17px}
+main{padding:20px 16px 48px}
+.crumb{color:var(--muted);font-size:14px;margin:0 0 4px}
+h1{font-size:28px;line-height:1.25;margin:4px 0 14px}
+h2{font-size:20px;margin:30px 0 10px}
+section,.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:14px 0}
+pre{margin:8px 0;padding:12px 14px;background:var(--code);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:4px;overflow-x:auto;font:13px/1.5 Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+code{font:13px Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:3px}
+pre code{background:none;padding:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}h1{font-size:24px}}
+.label{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+nav a,.button{display:inline-block;margin:0 8px 8px 0;padding:8px 14px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);text-decoration:none;font-weight:600;background:transparent;font-size:15px;cursor:pointer}
+a{color:var(--accent)}
+.button.primary,nav a.primary{background:var(--accent);color:#fff}
+details{margin:10px 0;border:1px solid var(--line);border-radius:6px;padding:10px 14px;background:var(--card)}
+summary{cursor:pointer;font-weight:600}
+.note{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:12px 0}
+</style></head><body><header><div><strong>AI Engineers Course</strong></div></header><main><p class="crumb">Triage tickets &middot; Level 2 of 3 (Route) &middot; Assignment</p><h1>Route each ticket to the right team and priority</h1><nav><a class="primary" href="hints-and-help.html">Hints and help</a></nav><section><p style="margin:0 0 14px">The labels are working, and the support lead is delighted. Now the real pressure: an outage and a double charge cannot wait in the same line as a how-to question. Extend your program so each ticket also gets a priority and is sent to the team that should handle it.</p></section><section><p style="margin:0 0 14px"><strong>Level 2 goal:</strong> extend your program so it also prints a <strong>priority</strong> (P1, P2, P3) and a <strong>queue</strong> (engineering, billing, support) for each ticket.</p></section><h2>What your program reads and prints</h2><p style="margin:0 0 14px">Your program is <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">main.py</code>. The grader runs it once per ticket with <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">python3 main.py</code>, sends the ticket as JSON on standard input, and reads standard output. Print exactly one JSON object and nothing else.</p><div class="card"><div class="pair"><div><div class="label">Input, example 1</div><pre>{
+  "id": "S-1",
+  "subject": "Refund for a cancelled order",
+  "body": "I cancelled my order last week but the payment is still on my card."
+}</pre></div><div><div class="label">Output, example 1</div><pre>{
+  "id": "S-1",
+  "label": "billing",
+  "priority": "P2",
+  "queue": "billing"
+}</pre></div></div></div><div class="card"><div class="pair"><div><div class="label">Input, example 2</div><pre>{
+  "id": "S-2",
+  "subject": "Password reset email never arrives",
+  "body": "I asked for a new password three times and nothing shows up."
+}</pre></div><div><div class="label">Output, example 2</div><pre>{
+  "id": "S-2",
+  "label": "access",
+  "priority": "P2",
+  "queue": "support"
+}</pre></div></div></div><div class="card"><div class="pair"><div><div class="label">Input, example 3</div><pre>{
+  "id": "S-3",
+  "subject": "App crashes when I upload a photo",
+  "body": "The page shows an error and the whole site is down for me."
+}</pre></div><div><div class="label">Output, example 3</div><pre>{
+  "id": "S-3",
+  "label": "bug",
+  "priority": "P1",
+  "queue": "engineering"
+}</pre></div></div></div><div class="card"><div class="pair"><div><div class="label">Input, example 4</div><pre>{
+  "id": "S-4",
+  "subject": "How do I export my data?",
+  "body": "I would like a copy of my notes."
+}</pre></div><div><div class="label">Output, example 4</div><pre>{
+  "id": "S-4",
+  "label": "other",
+  "priority": "P3",
+  "queue": "support"
+}</pre></div></div></div><p class="note">These are examples. The grader checks your program on five other tickets you have not seen, so your program must follow the rules, not remember the examples.</p><h2>The rules</h2><section><p style="margin:0 0 14px"><strong>The label.</strong> Join the subject and the body, make it lowercase, and look for these words:</p>
+<ul style="margin:0 0 14px;padding-left:24px"><li style="margin:0 0 6px">billing: charge, charged, invoice, refund, payment, billed, billing, receipt</li><li style="margin:0 0 6px">access: login, log in, sign in, password, permission, locked out, access</li><li style="margin:0 0 6px">bug: broken, crash, error, not working, fails, wrong, bug</li></ul>
+<p style="margin:0 0 14px">If more than one group matches, billing wins over access, and access wins over bug. If no group matches, the label is <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">other</code>.</p>
+<p style="margin:0 0 14px"><strong>The queue.</strong> A <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">bug</code> goes to <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">engineering</code>, <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">billing</code> goes to <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">billing</code>, and everything else (<code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">access</code> and <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">other</code>) goes to <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">support</code>.</p>
+<p style="margin:0 0 14px"><strong>The priority.</strong> Look at the lowercased subject and body and check in this order:</p>
+<ul style="margin:0 0 14px;padding-left:24px"><li style="margin:0 0 6px">P1 (work is blocked or money is wrong): cannot, can't, unable, locked out, down, outage, twice, duplicate, overcharged, wrong amount</li><li style="margin:0 0 6px">P3 (a how-to question): how do i, how can i, how to, where is, where can i, where do i</li><li style="margin:0 0 6px">P2 is everything else</li></ul></section><h2>How to test it</h2><p style="margin:0 0 14px">Run one of the examples from a terminal in the folder that holds <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">main.py</code>:</p><pre>echo '{"id": "S-1", "subject": "Refund for a cancelled order", "body": "I cancelled my order last week but the payment is still on my card."}' | python3 main.py</pre><p style="margin:0 0 14px">You should see:</p><pre>{"id": "S-1", "label": "billing", "priority": "P2", "queue": "billing"}</pre><h2>What to send back</h2><p style="margin:0 0 14px">Zip your program and reply to the tutor email with the zip attached. One zip per email, 10 MB or less. The grader needs <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">main.py</code> at the top of the zip, or inside a single folder.</p><pre>route.zip
+└── main.py
+
+Also fine, with one folder inside:
+
+route.zip
+└── route/
+    └── main.py</pre><p style="margin:0 0 14px">On a Mac or Linux, <code style="font-family:Menlo,Consolas,monospace;font-size:13px;background:#eef2f4;padding:1px 5px;border-radius:3px">zip route.zip main.py</code> makes it.</p><nav><a class="primary" href="hints-and-help.html">Hints and help</a></nav></main></body></html>

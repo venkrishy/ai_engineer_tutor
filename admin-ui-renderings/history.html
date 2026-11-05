@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Version history - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<h1>Version history</h1><p class="sub">Every save of a story, prompt or rubric is kept. Pick a version to compare, then revert.</p>
+<div class="toolbar"><select id="what" aria-label="Which text"><option>Triage tickets / Level 1 Classify / Prompt</option><option>Triage tickets / Level 1 Classify / Story</option><option>Triage tickets / Level 1 Classify / Rubric</option></select></div>
+<div class="grid cols-2">
+  <div class="card"><h2>Versions</h2><div class="tablewrap"><table><tbody id="v"></tbody></table></div></div>
+  <div class="card"><h2 id="dh">Changes</h2><div class="diff" id="diff"></div>
+    <div class="toolbar" style="margin:14px 0 0"><span class="spacer"></span><button class="btn" id="rev" type="button">Revert to this version</button></div>
+    <div class="demo-banner" style="margin:14px 0 0">Uploading a bundle again overwrites dashboard edits. The upload page warns you and keeps this history so you can revert.</div></div>
+</div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("history.html");
+const V = [
+  { n: 4, t: "Today 10:12", by: "admin", d: [["add","Write main.py using only the Python standard library."],["add","Read one ticket as JSON on stdin and print one label."],["del","Read the ticket and tag it."]] },
+  { n: 3, t: "Today 08:30", by: "admin", d: [["add","Create classify.zip containing main.py."],["del","Zip it."]] },
+  { n: 2, t: "Yesterday 18:02", by: "admin", d: [["add","Labels: bug, billing, access, other."]] },
+  { n: 1, t: "Yesterday 09:00", by: "upload v1", d: [["add","Initial text from the bundle."]] },
+];
+let cur = V[0];
+function draw() {
+  document.getElementById("v").innerHTML = V.map(x => `<tr class="click" data-n="${x.n}"><td><b>v${x.n}</b>${x === V[0] ? ' <span class="pill good">current</span>' : ""}</td><td>${x.t}</td><td>${x.by}</td></tr>`).join("");
+  document.querySelectorAll("#v tr").forEach(r => r.onclick = () => { cur = V.find(x => x.n == r.dataset.n); draw(); });
+  document.querySelector(`#v tr[data-n="${cur.n}"]`).style.background = "var(--brand-soft)";
+  document.getElementById("dh").textContent = `Changes in v${cur.n}`;
+  document.getElementById("diff").innerHTML = cur.d.map(([k, l]) => `<span class="${k}">${k === "add" ? "+ " : "- "}${esc(l)}</span>`).join("");
+  document.getElementById("rev").disabled = cur === V[0];
+}
+document.getElementById("rev").onclick = () => toast(`Reverted to v${cur.n} as a new version (demo).`);
+draw();
+</script></body></html>

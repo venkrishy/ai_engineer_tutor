@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mail Tutor Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Courier+Prime:wght@400;700&family=Zilla+Slab:wght@600;700&display=swap">
+<style>
+/* Layout: a fixed 1280x720 airmail letter, scaled to fit. The band along the top edge
+   is the deck's signature; each screen is a page of one email thread. */
+:root {
+  --paper: #eaf1f8;
+  --sheet: #ffffff;
+  --ink: #14284b;
+  --muted: #4c6080;
+  --line: #b9cbe0;
+  --air-blue: #1f4fa3;
+  --air-red: #c8283c;
+  --pass: #1c7c4a;
+  --pass-soft: #d9efe2;
+  --fail-soft: #f9dfe2;
+  --display: "Zilla Slab", Georgia, serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", Arial, sans-serif;
+  --mail: "Courier Prime", "Courier New", monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--ink); color: var(--ink); font-family: var(--body);
+  overflow: hidden; display: grid; place-items: center;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+#stage {
+  width: 1280px; height: 720px; flex: none; position: relative; overflow: hidden;
+  background: var(--paper); transform-origin: center center;
+}
+.air {
+  position: absolute; inset: 0 0 auto; height: 16px; z-index: 5;
+  background: repeating-linear-gradient(-55deg,
+    var(--air-red) 0 26px, var(--paper) 26px 40px,
+    var(--air-blue) 40px 66px, var(--paper) 66px 80px);
+}
+.slide {
+  position: absolute; inset: 16px 0 52px; padding: 34px 56px 18px;
+  display: flex; flex-direction: column; gap: 18px;
+  visibility: hidden; opacity: 0; transform: translateX(46px);
+  transition: opacity .34s ease, transform .42s cubic-bezier(.2,.8,.2,1), visibility 0s .42s;
+}
+.slide.before { transform: translateX(-46px); }
+.slide.active {
+  visibility: visible; opacity: 1; transform: none;
+  transition: opacity .34s ease, transform .42s cubic-bezier(.2,.8,.2,1), visibility 0s;
+}
+h1, h2 { font-family: var(--display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font-size: 44px; line-height: 1.08; }
+p { margin: 0; }
+.lead { font-size: 26px; line-height: 1.35; max-width: 34em; }
+.small { font-size: 21px; line-height: 1.38; color: var(--muted); }
+code, .mail { font-family: var(--mail); }
+code { font-size: .92em; }
+
+/* Build steps */
+[data-s] { opacity: 0; transform: translateY(14px); transition: opacity .32s ease, transform .4s cubic-bezier(.2,.8,.2,1); }
+[data-s].shown { opacity: 1; transform: none; }
+.sheet[data-s] { transform: translateY(70px) rotate(-1.6deg); }
+.sheet[data-s].shown { transform: none; }
+
+/* Screenshot on a sheet */
+.sheet { background: var(--sheet); padding: 8px; box-shadow: 0 10px 26px rgba(20,40,75,.2); align-self: start; line-height: 0; }
+.sheet img { display: block; max-width: 100%; height: auto; }
+
+.split { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 42px; }
+.split > div { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+.split.wide-right { grid-template-columns: 5fr 7fr; }
+.notes { display: flex; flex-direction: column; gap: 16px; font-size: 24px; line-height: 1.34; }
+.notes b { font-weight: 700; }
+.who { font-family: var(--mail); font-size: 18px; color: var(--air-blue); display: block; margin-bottom: 2px; font-weight: 700; }
+
+/* Title */
+.title { justify-content: center; gap: 22px; }
+.title h1 { font-size: 118px; line-height: 1; }
+.title .lead { font-size: 34px; }
+.addr { font-family: var(--mail); font-size: 26px; color: var(--air-blue); font-weight: 700; }
+.stamp {
+  position: absolute; right: 74px; top: 62px; width: 196px; padding: 16px 10px;
+  text-align: center; font-family: var(--display); font-size: 25px; line-height: 1.1;
+  color: var(--air-red); border: 4px double var(--air-red); border-radius: 8px;
+  transform: rotate(9deg) scale(1);
+}
+.stamp[data-s] { transform: rotate(9deg) scale(1.7); }
+.stamp[data-s].shown { transform: rotate(9deg) scale(1); }
+.envelope { position: absolute; right: 90px; bottom: 58px; width: 390px; height: 236px; animation: drop .9s cubic-bezier(.2,.9,.25,1) both; }
+@keyframes drop { from { transform: translate(280px,-120px) rotate(10deg); opacity: 0; } }
+
+/* Four moves */
+.moves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; list-style: none; padding: 0; margin: 12px 0 0; }
+.moves li { background: var(--sheet); padding: 20px 18px 22px; display: flex; flex-direction: column; gap: 8px; min-height: 310px; justify-content: center; }
+.moves b { font-family: var(--display); font-size: 36px; line-height: 1.1; }
+.moves span { font-size: 23px; line-height: 1.3; color: var(--muted); }
+.moves i { font-family: var(--mail); font-style: normal; font-size: 19px; color: var(--air-red); font-weight: 700; }
+.nope { font-family: var(--display); font-size: 42px; margin-top: 22px; }
+
+/* Ladder */
+.ladder { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; align-items: end; }
+.rung { background: var(--sheet); padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+.rung:nth-child(1) { height: 232px; } .rung:nth-child(2) { height: 300px; } .rung:nth-child(3) { height: 368px; }
+.rung h3 { font-family: var(--display); font-size: 33px; margin: 0; }
+.rung p { font-size: 21px; line-height: 1.3; }
+.bars { display: flex; gap: 5px; margin-top: auto; }
+.bars i { flex: 1; height: 11px; background: var(--line); position: relative; overflow: hidden; }
+.bars i::after { content: ""; position: absolute; inset: 0; background: var(--pass); transform: scaleX(0); transform-origin: left; transition: transform .5s .25s ease; }
+.shown .bars i.f::after { transform: none; }
+.rung .mail { color: var(--air-blue); font-size: 19px; font-weight: 700; }
+
+/* Diagram */
+.diagram { position: relative; width: 1168px; height: 416px; margin-top: 8px; }
+.diagram svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.diagram path { fill: none; stroke: var(--line); stroke-width: 3; }
+.node { position: absolute; width: 170px; height: 76px; background: var(--sheet); border: 2px solid var(--line); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 19px; line-height: 1.12; font-weight: 700; padding: 4px; transition: background .25s, border-color .25s, color .25s, transform .25s; }
+.node small { font-weight: 400; font-size: 16px; color: var(--muted); transition: color .25s; }
+.node.person { border-radius: 38px; }
+.node.hot { background: var(--air-blue); border-color: var(--air-blue); color: #fff; transform: scale(1.06); }
+.node.hot small { color: #dbe6f6; }
+.token { position: absolute; left: 0; top: 0; width: 46px; height: 30px; margin: -15px 0 0 -23px; z-index: 3; background: var(--sheet); border: 2px solid var(--air-red); transition: transform .42s cubic-bezier(.45,.05,.3,1); box-shadow: 0 4px 10px rgba(20,40,75,.3); }
+.token::after { content: ""; position: absolute; left: 2px; right: 2px; top: 1px; height: 14px; background: linear-gradient(to bottom right, transparent 49%, var(--air-red) 50%, transparent 54%) left/50% 100% no-repeat, linear-gradient(to bottom left, transparent 49%, var(--air-red) 50%, transparent 54%) right/50% 100% no-repeat; }
+.caption { min-height: 64px; font-size: 24px; line-height: 1.3; }
+.caption b { font-family: var(--display); font-size: 27px; }
+
+/* Room */
+.room { flex: 1; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: 18px; }
+.zone { padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; font-size: 21px; line-height: 1.3; }
+.zone h3 { font-family: var(--display); font-size: 29px; margin: 0; }
+.zone.vault { background: var(--ink); color: #fff; }
+.zone.sand { background: var(--sheet); border: 3px dashed var(--air-blue); }
+.zone.check { background: var(--sheet); }
+.tickets { display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
+.tk { font-family: var(--mail); font-size: 19px; padding: 5px 10px; background: var(--paper); display: flex; justify-content: space-between; }
+.zone.vault .tk { background: #2a4170; }
+.tk.ok { background: var(--pass-soft); } .tk.no { background: var(--fail-soft); }
+.result { font-family: var(--display); font-size: 33px; color: var(--pass); margin-top: auto; }
+
+/* Rails */
+.rails { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); grid-auto-rows: 1fr; gap: 16px; }
+.rail { background: var(--sheet); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; font-size: 21px; line-height: 1.3; color: var(--muted); }
+.rail b { font-family: var(--display); font-size: 40px; line-height: 1.05; color: var(--ink); }
+
+/* Run */
+pre { margin: 0; background: var(--ink); color: #eef4fb; font-family: var(--mail); font-size: 20px; line-height: 1.42; padding: 18px 20px; overflow-x: auto; }
+pre .c { color: #a9c1e4; }
+.split > .tree { display: block; }
+.tree { font-family: var(--mail); font-size: 19.5px; line-height: 1.42; background: var(--sheet); padding: 16px 18px; }
+.tree b { color: var(--air-blue); }
+
+/* Status box: mirrors the box in every tutor email */
+#status {
+  position: absolute; inset: auto 0 0; height: 52px; z-index: 6; display: flex; align-items: center; gap: 18px;
+  padding: 0 56px; background: var(--sheet); border-top: 2px solid var(--line); font-size: 18px; color: var(--muted);
+}
+#status .part { color: var(--air-blue); font-weight: 700; min-width: 190px; }
+#bar { flex: 1; display: flex; gap: 5px; }
+#bar i { flex: 1; height: 10px; background: var(--line); transition: background .25s; }
+#bar i.f { background: var(--pass); }
+#count { font-variant-numeric: tabular-nums; min-width: 68px; text-align: right; }
+button { font: inherit; font-size: 18px; color: var(--ink); background: var(--paper); border: 2px solid var(--line); width: 40px; height: 34px; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--air-red); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; transition-delay: 0s !important; animation-duration: .01ms !important; }
+}
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  html, body { height: auto; overflow: visible; display: block; background: none; }
+  #stage { transform: none !important; height: auto; overflow: visible; }
+  .air, #status { display: none; }
+  .slide { position: relative; inset: auto; width: 1280px; height: 720px; visibility: visible; opacity: 1; transform: none; page-break-after: always; overflow: hidden; }
+  [data-s] { opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="air" aria-hidden="true"></div>
+
+  <section class="slide title" data-part="Introduction" aria-label="Mail Tutor">
+    <p class="addr">To: tutor@theaiguru.dev</p>
+    <h1>Mail Tutor</h1>
+    <p class="lead" style="max-width:17em">An AI engineering tutor that lives entirely in your inbox.</p>
+    <div class="stamp" data-s="1">Proof of concept</div>
+    <svg class="envelope" viewBox="0 0 390 236" aria-hidden="true">
+      <rect x="2" y="2" width="386" height="232" fill="#fff" stroke="#1f4fa3" stroke-width="4"/>
+      <path d="M2 2 195 130 388 2" fill="none" stroke="#1f4fa3" stroke-width="4"/>
+      <path d="M2 234 150 100M388 234 240 100" fill="none" stroke="#b9cbe0" stroke-width="3"/>
+    </svg>
+  </section>
+
+  <section class="slide" data-part="Introduction" aria-label="The idea">
+    <h2>The whole course happens on one email thread</h2>
+    <ol class="moves">
+      <li data-s="1"><i>Student</i><b>Writes in</b><span>Any email to the tutor starts the course.</span></li>
+      <li data-s="2"><i>Tutor</i><b>Sends an assignment</b><span>A story, a goal and links to two help pages.</span></li>
+      <li data-s="3"><i>Student</i><b>Replies with a zip</b><span>Built with an AI coding tool of their choice.</span></li>
+      <li data-s="4"><i>Tutor</i><b>Grades it</b><span>Hidden tests decide. The next level follows a pass.</span></li>
+    </ol>
+    <p class="nope" data-s="5">No app, no login, no website to learn.</p>
+  </section>
+
+  <section class="slide" data-part="See it work" aria-label="The student says hello">
+    <h2>Saying hello is the sign-up</h2>
+    <div class="split">
+      <div>
+        <div class="sheet" data-s="1"><img src="flow/01-student-registers.png" alt="A student emails the tutor to register" style="max-height:260px"></div>
+        <div class="notes">
+          <p data-s="2">Anyone who writes in becomes a student. There is no sign-up page.</p>
+          <p data-s="3">Every email carries the same blue status box and progress bar.</p>
+        </div>
+      </div>
+      <div><div class="sheet" data-s="2"><img src="flow/02-welcome-email.png" alt="The welcome email with status box and progress bar" style="max-height:510px"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="See it work" aria-label="The first assignment">
+    <h2>The first assignment asks students to try alone</h2>
+    <div class="split wide-right">
+      <div class="notes">
+        <p data-s="1">A second email brings the story, the Level 1 goal and a short how-to-submit note.</p>
+        <p data-s="2">It links to an Assignment page and a Hints and help page.</p>
+        <p data-s="3"><b>Design choice:</b> the ready-made prompt lives on the hints page, not in the email.</p>
+      </div>
+      <div><div class="sheet" data-s="1" style="align-self:center"><img src="flow/03-assignment-email.png" alt="The assignment email for Level 1, Classify incoming support tickets" style="max-height:510px"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="See it work" aria-label="Submit and pass">
+    <h2>A zip goes out, a verdict comes back</h2>
+    <div class="split">
+      <div>
+        <div class="sheet" data-s="1"><img src="flow/04-student-submits-zip.png" alt="The student replies with classify.zip attached"></div>
+        <div class="notes">
+          <p data-s="1">The student replies on the same thread, using Claude Code, GitHub Copilot or any tool.</p>
+          <p data-s="2">The zip runs in a sandbox against hidden tickets. The reply opens with <b>Pass</b>, <b>Fail</b> or <b>Not graded</b>, then a short LLM-written note.</p>
+        </div>
+      </div>
+      <div><div class="sheet" data-s="2"><img src="flow/05-pass-level-1-next-level.png" alt="Pass on Level 1, with the Level 2 assignment" style="max-height:510px"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="See it work" aria-label="When a program fails">
+    <h2>A failure teaches without giving the answer</h2>
+    <div class="split wide-right">
+      <div class="notes">
+        <p data-s="1">The student stays on the same level and keeps the thread.</p>
+        <p data-s="2">The note names a likely cause. The result line shows the score: 1 of 5 here, with 4 needed.</p>
+        <p data-s="3"><b>Hint 1</b> points to the Hints and help page. A second fail gives a stronger hint.</p>
+      </div>
+      <div><div class="sheet" data-s="1" style="align-self:center"><img src="flow/15-fail-with-hint.png" alt="A Fail reply with a note and Hint 1" style="max-height:510px"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="The assignment" aria-label="Three levels">
+    <h2>Triage tickets is a ladder of three levels</h2>
+    <div class="ladder">
+      <div class="rung" data-s="1"><span class="mail">classify.zip</span><h3>1. Classify</h3><p>Read one support ticket and tag it <code>bug</code>, <code>billing</code>, <code>access</code> or <code>other</code>.</p><div class="bars"><i class="f"></i><i></i><i></i></div></div>
+      <div class="rung" data-s="2"><span class="mail">route.zip</span><h3>2. Route</h3><p>Send the ticket to the right team and give it a priority.</p><div class="bars"><i class="f"></i><i class="f"></i><i></i></div></div>
+      <div class="rung" data-s="3"><span class="mail">reply.zip</span><h3>3. Reply</h3><p>Draft a short customer reply, checked by a custom checker.</p><div class="bars"><i class="f"></i><i class="f"></i><i class="f"></i></div></div>
+    </div>
+    <p class="lead" data-s="4">A level is passed at <b>4 of 5 hidden tickets</b> right.</p>
+  </section>
+
+  <section class="slide" data-part="The assignment" aria-label="Levels two and three">
+    <h2>Each pass carries the next level in the same reply</h2>
+    <div class="split">
+      <div>
+        <div class="sheet" data-s="1"><img src="flow/07-pass-level-2-next-level.png" alt="Pass on Level 2, with the Level 3 assignment" style="max-height:400px"></div>
+        <p class="small" data-s="1">Level 2 passed. Tries left today drops by one with each graded submission.</p>
+      </div>
+      <div>
+        <div class="sheet" data-s="2"><img src="flow/09-pass-level-3.png" alt="Pass on Level 3, with all levels cleared" style="max-height:400px"></div>
+        <p class="small" data-s="2">Level 3 passed. All three bars are full.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="The assignment" aria-label="Finishing the ladder">
+    <h2>The ladder has a proper ending</h2>
+    <div class="split">
+      <div>
+        <div class="sheet" data-s="1"><img src="flow/10-all-levels-cleared.png" alt="The celebration email: you have cleared every level" style="max-height:440px"></div>
+        <p class="small" data-s="1">A separate celebration email suggests what to do next.</p>
+      </div>
+      <div>
+        <div class="sheet" data-s="2"><img src="flow/14-ladder-is-finished.png" alt="The reply to a finished student"></div>
+        <p class="small" data-s="2">Write again after finishing and the card is already marked finished. A new zip gets a short note, with no grading and no tries used.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="The assignment" aria-label="The two pages">
+    <h2>Every level has two generated pages</h2>
+    <div class="split">
+      <div style="flex-direction:row">
+        <div class="sheet" data-s="1" style="flex:none"><img src="flow/11-assignment-page.png" alt="The Level 1 Assignment page" style="max-height:510px"></div>
+      </div>
+      <div style="flex-direction:row">
+        <div class="sheet" data-s="2" style="flex:none"><img src="flow/12-hints-and-help-page.png" alt="The Level 1 Hints and help page" style="max-height:510px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="arch" data-part="How it works" data-steps="9" aria-label="How one letter travels">
+    <h2>How one letter travels</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 1168 416" aria-hidden="true">
+        <path d="M115 208H535"/><path d="M535 208H745"/>
+        <path d="M745 208V58"/><path d="M325 58H745"/><path d="M535 58V208"/>
+        <path d="M745 208 1065 118"/><path d="M745 208 1065 298"/>
+        <path d="M745 208V376H535"/><path d="M535 376H115V208"/>
+      </svg>
+      <div class="node person" style="left:30px;top:170px" data-n="student">Student<small>mailbox</small></div>
+      <div class="node" style="left:240px;top:170px" data-n="sesin">Amazon SES<small>inbound</small></div>
+      <div class="node" style="left:450px;top:170px" data-n="s3">S3<small>raw/</small></div>
+      <div class="node" style="left:660px;top:170px" data-n="clerk">Clerk Lambda<small>one letter, one reply</small></div>
+      <div class="node" style="left:660px;top:20px" data-n="ddb">DynamoDB<small>tutor-main</small></div>
+      <div class="node" style="left:980px;top:80px" data-n="ac">AgentCore<small>Code Interpreter</small></div>
+      <div class="node" style="left:980px;top:260px" data-n="br">Amazon Bedrock<small>Claude</small></div>
+      <div class="node" style="left:450px;top:338px" data-n="sesout">Amazon SES<small>outbound</small></div>
+      <div class="node" style="left:450px;top:20px" data-n="admin">Admin Lambda<small>dashboard</small></div>
+      <div class="node person" style="left:240px;top:20px" data-n="adminp">Admin<small>password</small></div>
+      <div class="token" aria-hidden="true"></div>
+    </div>
+    <p class="caption" aria-live="polite"></p>
+  </section>
+
+  <section class="slide" data-part="How it works" aria-label="The answer key stays outside">
+    <h2>The answer key never enters the room</h2>
+    <div class="room">
+      <div class="zone vault" data-s="1">
+        <h3>Hidden tickets</h3>
+        <p>Kept in S3 and out of git, because this repository is public.</p>
+        <div class="tickets" aria-label="Example hidden tickets with answers">
+          <span class="tk">ticket 1 + answer</span><span class="tk">ticket 2 + answer</span><span class="tk">ticket 3 + answer</span><span class="tk">ticket 4 + answer</span><span class="tk">ticket 5 + answer</span>
+        </div>
+      </div>
+      <div class="zone sand" data-s="2">
+        <h3>The room</h3>
+        <p>AgentCore runs the student's <code>main.py</code> with no internet, one ticket at a time. It sees ticket inputs only.</p>
+        <div class="tickets" aria-label="Example ticket inputs">
+          <span class="tk">input 1 → output</span>
+          <span class="tk">input 2 → output</span>
+          <span class="tk">input 3 → output</span>
+          <span class="tk">input 4 → output</span>
+          <span class="tk">input 5 → output</span>
+        </div>
+      </div>
+      <div class="zone check" data-s="3">
+        <h3>Checker</h3>
+        <p>Trusted code in the Lambda scores each output.</p>
+        <div class="tickets" aria-label="Example score, four of five right">
+          <span class="tk ok">1 right</span><span class="tk ok">2 right</span><span class="tk no">3 wrong</span><span class="tk ok">4 right</span><span class="tk ok">5 right</span>
+        </div>
+        <p class="result" data-s="4">Example: 4 of 5, Pass</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="How it works" aria-label="Guard rails">
+    <h2>Guard rails built for the demo</h2>
+    <div class="rails">
+      <div class="rail" data-s="1"><b>5 tries</b>graded per student, per UTC day</div>
+      <div class="rail" data-s="2"><b>100 tries</b>graded per day overall</div>
+      <div class="rail" data-s="3"><b>$50 a month</b>AWS Budget alarm fires at 80%</div>
+      <div class="rail" data-s="4"><b>Clean mail only</b>SES marks it free of spam and viruses, and the sender passes DMARC or DKIM</div>
+      <div class="rail" data-s="5"><b>Pause switch</b>stops new registration</div>
+      <div class="rail" data-s="6"><b>Dead-letter queue</b>with an alarm when a letter fails</div>
+    </div>
+  </section>
+
+  <section class="slide" data-part="Run it" aria-label="Project and commands">
+    <h2>Plain Python, tested with in-memory fakes</h2>
+    <div class="split">
+      <div class="tree" data-s="1">
+        <b>tutor/</b> application code<br>
+        &nbsp;&nbsp;clerk.py &nbsp;letter in, reply out<br>
+        &nbsp;&nbsp;service.py one stored letter, end to end<br>
+        &nbsp;&nbsp;rooms.py &nbsp;AgentCore room<br>
+        &nbsp;&nbsp;judge.py &nbsp;pass bar<br>
+        &nbsp;&nbsp;notes.py &nbsp;Bedrock note writer<br>
+        <b>assignments/</b> one folder per assignment<br>
+        <b>infra/</b> AWS CDK stack in Python<br>
+        <b>scripts/</b> upload bundles, build pages<br>
+        <b>tests/</b> fakes, no mocking framework<br>
+        <b>admin-ui-renderings/</b> static mock-ups
+      </div>
+      <div>
+<pre data-s="2"><span class="c"># tests</span>
+uv run --python 3.14 --with pytest \
+  python3 -m pytest -q
+
+<span class="c"># deploy the AWS stack</span>
+cd infra &amp;&amp; bunx aws-cdk@latest deploy
+
+<span class="c"># publish an assignment bundle</span>
+python3 scripts/upload_assignment.py \
+  assignments/triage
+
+<span class="c"># rebuild the pages</span>
+python3 scripts/build_pages.py</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide title" data-part="Run it" aria-label="Status">
+    <h1 style="font-size:84px">Where it stands</h1>
+    <p class="lead" data-s="1">A working proof of concept. SES is in sandbox mode, so replies reach only verified addresses.</p>
+    <p class="lead" data-s="2">Admins already have a live dashboard for students, letters, assignments, emails and settings.</p>
+    <p class="lead" data-s="3">Next steps are in <code>docs/production-plan.md</code>.</p>
+    <p class="addr" data-s="3">tutor@theaiguru.dev</p>
+  </section>
+
+  <footer id="status">
+    <span class="part" id="part"></span>
+    <div id="bar" aria-hidden="true"></div>
+    <button id="prev" aria-label="Previous">‹</button>
+    <button id="next" aria-label="Next">›</button>
+    <span id="count"></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var slides = [].slice.call(document.querySelectorAll('.slide'));
+  var bar = document.getElementById('bar');
+  var cur = 0, step = 0;
+
+  function steps(s) {
+    if (s.dataset.steps) return +s.dataset.steps;
+    return [].reduce.call(s.querySelectorAll('[data-s]'), function (m, e) { return Math.max(m, +e.dataset.s); }, 0);
+  }
+
+  // The architecture walk: each step moves the envelope along waypoints.
+  var P = { student:[115,208], sesin:[325,208], s3:[535,208], clerk:[745,208], ddb:[745,58], ac:[1065,118], br:[1065,298], sesout:[535,376], admin:[535,58], adminp:[325,58], corner1:[745,376], corner2:[115,376] };
+  var WALK = [
+    { hot:['student'], path:['student'], text:'<b>A student replies with a zip.</b> Everything starts as an ordinary email.' },
+    { hot:['sesin'], path:['sesin'], text:'<b>SES inbound</b> receives mail for tutor@theaiguru.dev.' },
+    { hot:['s3'], path:['s3'], text:'<b>S3</b> stores each raw letter. The new object wakes the Clerk.' },
+    { hot:['clerk'], path:['clerk'], text:'<b>The Clerk</b> checks the sender, enforces the daily caps and grades the zip.' },
+    { hot:['ddb'], path:['ddb','clerk'], text:'<b>DynamoDB</b> holds student cards and events in one table.' },
+    { hot:['ac'], path:['ac'], text:'<b>AgentCore</b> runs <code>main.py</code> on the hidden tickets, with no internet.' },
+    { hot:['br'], path:['clerk','br'], text:'<b>Bedrock</b> writes the short note through a cross-region Claude inference profile.' },
+    { hot:['sesout'], path:['clerk','corner1','sesout'], text:'<b>SES outbound</b> sends HTML and plain text on the same thread.' },
+    { hot:['student'], path:['corner2','student'], text:'<b>Back in the mailbox.</b> One letter in, one reply out.' },
+    { hot:['adminp','admin','ddb','s3'], path:['student'], text:'<b>Admins</b> use a password-protected dashboard to see students and letters, upload assignments and edit emails, prompts and rubrics.' }
+  ];
+  var arch = document.getElementById('arch');
+  var token = arch.querySelector('.token');
+  var caption = arch.querySelector('.caption');
+  var timers = [];
+  function place(name) { token.style.transform = 'translate(' + P[name][0] + 'px,' + (P[name][1] - 52) + 'px)'; }
+  function drawWalk(n, animate) {
+    timers.forEach(clearTimeout); timers = [];
+    var w = WALK[n];
+    [].forEach.call(arch.querySelectorAll('.node'), function (e) { e.classList.toggle('hot', w.hot.indexOf(e.dataset.n) > -1); });
+    caption.innerHTML = w.text;
+    if (!animate) { place(w.path[w.path.length - 1]); return; }
+    w.path.forEach(function (p, i) { timers.push(setTimeout(function () { place(p); }, i * 430)); });
+  }
+
+  function render(animate) {
+    slides.forEach(function (s, i) {
+      s.classList.toggle('active', i === cur);
+      s.classList.toggle('before', i < cur);
+      s.setAttribute('aria-hidden', i === cur ? 'false' : 'true');
+    });
+    var s = slides[cur];
+    [].forEach.call(s.querySelectorAll('[data-s]'), function (e) { e.classList.toggle('shown', +e.dataset.s <= step); });
+    if (s === arch) drawWalk(step, animate);
+    document.getElementById('part').textContent = s.dataset.part;
+    document.getElementById('count').textContent = (cur + 1) + ' of ' + slides.length;
+    [].forEach.call(bar.children, function (b, i) { b.classList.toggle('f', i <= cur); });
+    try { history.replaceState(null, '', '#s' + (cur + 1)); } catch (e) {}
+  }
+  function next() {
+    if (step < steps(slides[cur])) { step++; render(true); }
+    else if (cur < slides.length - 1) { cur++; step = 0; render(false); }
+  }
+  function prev() {
+    if (step > 0) { step--; render(false); }
+    else if (cur > 0) { cur--; step = steps(slides[cur]); render(false); }
+  }
+  function fit() {
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = 'scale(' + k + ')';
+    // Keep the scaled stage centred: its layout box stays 1280x720.
+    stage.style.position = 'fixed';
+    stage.style.left = (window.innerWidth - 1280) / 2 + 'px';
+    stage.style.top = (window.innerHeight - 720) / 2 + 'px';
+  }
+
+  slides.forEach(function () { bar.appendChild(document.createElement('i')); });
+  document.getElementById('next').addEventListener('click', function (e) { e.stopPropagation(); next(); });
+  document.getElementById('prev').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
+  stage.addEventListener('click', function (e) {
+    if (e.target.closest('a,button,#status')) return;
+    var r = stage.getBoundingClientRect();
+    (e.clientX - r.left < r.width * .25) ? prev() : next();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { cur = 0; step = 0; render(false); }
+    else if (e.key === 'End') { cur = slides.length - 1; step = steps(slides[cur]); render(false); }
+    else if (e.key === 'f' && stage.requestFullscreen) { var p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(function () {}); }
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (tx === null) return;
+    var d = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(d) > 50) { e.preventDefault(); (d < 0) ? next() : prev(); }
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', fromHash);
+  function fromHash() {
+    var m = /^#s(\d+)$/.exec(location.hash);
+    if (m && +m[1] >= 1 && +m[1] <= slides.length && +m[1] - 1 !== cur) { cur = +m[1] - 1; step = 0; render(false); }
+  }
+  fit(); fromHash(); render(false);
+  // Show the title stamp on its own so the first screen is complete at rest.
+  if (cur === 0) { setTimeout(function () { if (cur === 0 && step === 0) { step = 1; render(true); } }, 900); }
+})();
+</script>
+</body>
+</html>

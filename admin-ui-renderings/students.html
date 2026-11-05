@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Students - Tutor Desk</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell"><aside class="side" id="side"></aside><main>
+<h1>Students</h1><p class="sub">Everyone who has emailed the tutor. Anyone who writes in is registered and welcomed automatically.</p>
+<div class="toolbar">
+  <input type="search" id="q" placeholder="Search name or email" aria-label="Search students">
+  <select id="f" aria-label="Filter by status"><option value="">All statuses</option><option>Active</option><option>Welcomed</option><option>Cap hit</option><option>Finished</option></select>
+  <span class="spacer"></span>
+  <span class="pill brand">Registration open</span>
+  <button class="btn ghost" id="pause" type="button">Pause registration</button>
+</div>
+<div class="card"><div class="tablewrap"><table>
+<thead><tr><th>Student</th><th>Assignment</th><th>Progress</th><th>Status</th><th>Tries today</th><th>Last result</th><th>Last letter</th></tr></thead>
+<tbody id="rows"></tbody></table></div></div>
+</main></div>
+<script src="app.js"></script>
+<script>
+mountShell("students.html");
+const rows = document.getElementById("rows"), q = document.getElementById("q"), f = document.getElementById("f");
+function draw() {
+  const t = q.value.toLowerCase();
+  rows.innerHTML = STUDENTS.filter(s => (!f.value || s.status === f.value) && (s.name + s.email).toLowerCase().includes(t)).map(s => {
+    const steps = LEVELS.map((_, i) => `<i class="${i < s.cleared ? "done" : i === s.cleared && s.status !== "Finished" ? "now" : ""}"></i>`).join("");
+    return `<tr class="click" onclick="location='student.html?id=${s.id}'">
+      <td><b>${esc(s.name)}</b><br><span style="color:var(--muted);font-size:13px">${esc(s.email)}</span></td>
+      <td>Triage tickets</td>
+      <td><div class="steps" title="Levels cleared: ${s.cleared} of 3">${steps}</div><span style="font-size:12px;color:var(--muted)">Level ${Math.min(s.level,3)}: ${LEVELS[s.level-1]}</span></td>
+      <td><span class="pill ${pillFor(s.status)}">${s.status}</span></td>
+      <td>${s.tries} / 5</td>
+      <td><span class="pill ${pillFor(s.result)}">${s.result}</span></td><td>${s.last}</td></tr>`;
+  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">No students match.</td></tr>`;
+}
+q.oninput = f.onchange = draw; draw();
+document.getElementById("pause").onclick = () => toast("Registration paused (demo). New senders get no welcome.");
+</script></body></html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The mail tutor — tracer plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Petrona:ital,wght@0,500;0,650;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #e7eef0;
+      --sheet: #f6fafb;
+      --ink: #17262c;
+      --muted: #3e5560;
+      --blue: #1d4f73;
+      --blue-ink: #e8f3f8;
+      --line: #c3d3db;
+      --rule: #5d7380;
+      --stamp: #9f2d2d;
+      --pass: #1c6b45;
+      --focus: #0b6bcb;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(29, 79, 115, 0.06), transparent 32rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Atkinson Hyperlegible", "Segoe UI", sans-serif;
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+
+    .sheet {
+      max-width: 52rem;
+      margin: 2.5rem auto 4rem;
+      padding: 2.75rem 1.6rem 3.25rem;
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      border-left: 8px solid var(--blue);
+      box-shadow: 0 1px 0 rgba(23, 38, 44, 0.04);
+    }
+
+    header h1 {
+      margin: 0 0 0.85rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: clamp(2.5rem, 6vw, 3.6rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+    }
+
+    header p {
+      max-width: 38rem;
+      margin: 0;
+      font-size: 1.28rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    h2 {
+      margin: 2.9rem 0 0.7rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: 1.9rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    h3 {
+      margin: 1.5rem 0 0.35rem;
+      font-family: Petrona, Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 650;
+    }
+
+    p { margin: 0.8rem 0; max-width: 40rem; }
+
+    a { color: var(--blue); }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.4rem;
+      margin: 1.35rem 0 0;
+      padding: 0;
+      list-style: none;
+      max-width: none;
+    }
+
+    .legend li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .swatch {
+      width: 1.15rem;
+      height: 1.15rem;
+      flex: none;
+      background: #fff;
+      border: 1.5px solid var(--rule);
+    }
+
+    .swatch-aws { background: var(--blue); border-color: var(--blue); }
+    .swatch-other { border-style: dashed; }
+
+    figure.diagram {
+      margin: 1.35rem 0 0.4rem;
+    }
+
+    .diagram {
+      overflow-x: auto;
+    }
+
+    figcaption {
+      margin-top: 0.45rem;
+      max-width: 40rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    svg.arch { display: block; width: 100%; min-width: 700px; height: auto; }
+
+    .node { fill: #fff; stroke: var(--rule); stroke-width: 1.5; }
+    .node-aws { fill: var(--blue); stroke: var(--blue); stroke-width: 1.5; }
+    .node-other { fill: #fff; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 5 3.5; }
+    .label { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 15px; fill: var(--ink); font-weight: 700; }
+    .small { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 13px; fill: var(--muted); }
+    .label.on-blue { fill: #fff; }
+    .small.on-blue { fill: var(--blue-ink); }
+    .arrow { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+    .arrow-aws { stroke: var(--blue); stroke-width: 1.5; fill: none; }
+    .arrow-fail { stroke: var(--stamp); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+
+    ol.steps { margin: 0.5rem 0 0; padding: 0; list-style: none; counter-reset: step; }
+    ol.steps li {
+      position: relative;
+      margin: 0;
+      padding: 0.85rem 0 0.85rem 3rem;
+      border-top: 1px solid var(--line);
+      max-width: 40rem;
+    }
+    ol.steps li:last-child { border-bottom: 1px solid var(--line); }
+    ol.steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.85rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      background: var(--ink);
+      color: #fff;
+      font-family: Petrona, Georgia, serif;
+      text-align: center;
+      line-height: 1.8rem;
+    }
+
+    .split { display: grid; gap: 1rem; margin-top: 1rem; }
+    @media (min-width: 720px) {
+      .split { grid-template-columns: 1fr 1fr; }
+    }
+
+    .rule {
+      margin: 0;
+      padding: 1rem 1rem 1rem 1.1rem;
+      background: #fff;
+      border-left: 4px solid var(--blue);
+    }
+    .rule.fail { border-left-color: var(--stamp); }
+    .rule.pass { border-left-color: var(--pass); }
+    .rule strong { display: block; font-family: Petrona, Georgia, serif; font-size: 1.25rem; font-weight: 650; margin-bottom: 0.25rem; }
+    .rule p { margin: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 1.05rem;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.7rem 0.6rem 0.7rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    th { font-weight: 700; }
+
+    ul { margin: 0.5rem 0; padding-left: 1.2rem; max-width: 40rem; }
+    li { margin: 0.4rem 0; }
+
+    footer {
+      margin-top: 2.75rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .sheet { margin: 0; border: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <article class="sheet">
+    <header>
+      <h1>A tutor that lives in the mailbox</h1>
+      <p>A student gets a problem by email, sends a zip of code back, and receives a pass or a fail on the same thread. The note says what passed or what to fix. Pass moves them forward. Fail keeps them on the same problem. There is no website.</p>
+    </header>
+
+    <ul class="legend">
+      <li><span class="swatch" aria-hidden="true"></span> The work, in plain words</li>
+      <li><span class="swatch swatch-aws" aria-hidden="true"></span> Amazon. The product name lives here.</li>
+      <li><span class="swatch swatch-other" aria-hidden="true"></span> Not Amazon</li>
+    </ul>
+
+    <h2>Self-Registration</h2>
+    <p>There is no form. A student registers by writing to <strong>tutor@theaiguru.dev</strong>. That first letter creates them, and the reply is problem 1. A zip on that first letter is ignored.</p>
+    <h2>Coding Assignment and Grading Workflow</h2>
+    <p>Each attempt is a submission that solves the coding assignment, emailed as one zip of 10 MB or less. The zip holds <strong>main.py</strong> at the top or inside a single folder. It is not graded on arrival. It waits with the others.</p>
+    <p>The backend grades the waiting assignments together, in one batch, and it does that in private. Each student has a daily cap on how many assignments they can submit. Their code runs on one model chosen ahead of time, and grading uses that same model and no other.</p>
+
+    <figure class="diagram">
+      <svg class="arch" viewBox="0 0 740 900" role="img" aria-labelledby="diagramTitle diagramDesc">
+        <title id="diagramTitle">How a letter moves</title>
+        <desc id="diagramDesc">White boxes are the work. Blue boxes are Amazon. A student writes to tutor@theaiguru.dev. Cloudflare, which is not Amazon, holds the DNS. SES receives the mail and later sends the reply. S3 keeps the raw letter. Lambda is the clerk. DynamoDB holds the student card. Secrets Manager holds the model key. A VPC is the private network where grading runs. The reply goes back to the same inbox.</desc>
+        <defs>
+          <marker id="ah-ink" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#17262c"/>
+          </marker>
+          <marker id="ah-aws" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#1d4f73"/>
+          </marker>
+        </defs>
+
+        <rect class="node" x="16" y="16" width="348" height="76" rx="2"/>
+        <text class="label" x="190" y="46" text-anchor="middle">Student’s mailbox</text>
+        <text class="small" x="190" y="70" text-anchor="middle">Writes to tutor@theaiguru.dev</text>
+
+        <line class="arrow" x1="364" y1="54" x2="416" y2="54" marker-end="url(#ah-ink)"/>
+        <rect class="node-other" x="424" y="16" width="300" height="76" rx="2"/>
+        <text class="label" x="574" y="46" text-anchor="middle">Cloudflare</text>
+        <text class="small" x="574" y="70" text-anchor="middle">DNS only. Not Amazon.</text>
+
+        <line class="arrow" x1="190" y1="92" x2="190" y2="124" marker-end="url(#ah-ink)"/>
+        <text class="small" x="202" y="114">sends a letter</text>
+
+        <rect class="node" x="16" y="128" width="348" height="80" rx="2"/>
+        <text class="label" x="190" y="160" text-anchor="middle">Mail in and mail out</text>
+        <text class="small" x="190" y="184" text-anchor="middle">Arrives here. The reply leaves here.</text>
+
+        <line class="arrow-aws" x1="364" y1="168" x2="416" y2="168" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="128" width="300" height="80" rx="2"/>
+        <text class="label on-blue" x="574" y="160" text-anchor="middle">SES</text>
+        <text class="small on-blue" x="574" y="184" text-anchor="middle">Sends and receives the mail</text>
+
+        <line class="arrow" x1="190" y1="208" x2="190" y2="240" marker-end="url(#ah-ink)"/>
+
+        <rect class="node" x="16" y="244" width="348" height="80" rx="2"/>
+        <text class="label" x="190" y="276" text-anchor="middle">The letter is kept</text>
+        <text class="small" x="190" y="300" text-anchor="middle">We store the raw message</text>
+
+        <line class="arrow-aws" x1="364" y1="284" x2="416" y2="284" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="244" width="300" height="80" rx="2"/>
+        <text class="label on-blue" x="574" y="276" text-anchor="middle">S3</text>
+        <text class="small on-blue" x="574" y="300" text-anchor="middle">The raw letter</text>
+
+        <line class="arrow" x1="190" y1="324" x2="190" y2="356" marker-end="url(#ah-ink)"/>
+
+        <rect class="node" x="16" y="360" width="348" height="156" rx="2"/>
+        <text class="label" x="190" y="400" text-anchor="middle">The clerk</text>
+        <text class="small" x="190" y="426" text-anchor="middle">The first letter creates the student.</text>
+        <text class="small" x="190" y="448" text-anchor="middle">A zip waits here for a batch.</text>
+        <text class="small" x="190" y="470" text-anchor="middle">Then a reply goes out.</text>
+
+        <line class="arrow-aws" x1="364" y1="397" x2="416" y2="397" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="360" width="300" height="74" rx="2"/>
+        <text class="label on-blue" x="574" y="392" text-anchor="middle">Lambda</text>
+        <text class="small on-blue" x="574" y="414" text-anchor="middle">The clerk itself</text>
+
+        <line class="arrow-aws" x1="364" y1="479" x2="416" y2="479" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="442" width="300" height="74" rx="2"/>
+        <text class="label on-blue" x="574" y="474" text-anchor="middle">DynamoDB</text>
+        <text class="small on-blue" x="574" y="496" text-anchor="middle">The student card</text>
+
+        <line class="arrow" x1="190" y1="516" x2="190" y2="548" marker-end="url(#ah-ink)"/>
+
+        <rect class="node" x="16" y="552" width="348" height="80" rx="2"/>
+        <text class="label" x="190" y="584" text-anchor="middle">The model key</text>
+        <text class="small" x="190" y="608" text-anchor="middle">Placed in the room. Never mailed back.</text>
+
+        <line class="arrow-aws" x1="364" y1="592" x2="416" y2="592" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="552" width="300" height="80" rx="2"/>
+        <text class="label on-blue" x="574" y="584" text-anchor="middle">Secrets Manager</text>
+        <text class="small on-blue" x="574" y="608" text-anchor="middle">Holds the model key</text>
+
+        <line class="arrow" x1="190" y1="632" x2="190" y2="664" marker-end="url(#ah-ink)"/>
+
+        <rect class="node" x="16" y="668" width="348" height="96" rx="2"/>
+        <text class="label" x="190" y="702" text-anchor="middle">Grade the waiting zips</text>
+        <text class="small" x="190" y="726" text-anchor="middle">One private door for the batch.</text>
+        <text class="small" x="190" y="746" text-anchor="middle">The next picture opens this box.</text>
+
+        <line class="arrow-aws" x1="364" y1="716" x2="416" y2="716" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="668" width="300" height="96" rx="2"/>
+        <text class="label on-blue" x="574" y="702" text-anchor="middle">VPC</text>
+        <text class="small on-blue" x="574" y="726" text-anchor="middle">The private network</text>
+        <text class="small on-blue" x="574" y="746" text-anchor="middle">No public internet</text>
+
+        <line class="arrow" x1="190" y1="764" x2="190" y2="796" marker-end="url(#ah-ink)"/>
+
+        <rect class="node" x="16" y="800" width="348" height="80" rx="2"/>
+        <text class="label" x="190" y="832" text-anchor="middle">Reply on the same thread</text>
+        <text class="small" x="190" y="856" text-anchor="middle">Pass, fail, or not graded</text>
+
+        <line class="arrow-aws" x1="364" y1="840" x2="416" y2="840" marker-end="url(#ah-aws)"/>
+        <rect class="node-aws" x="424" y="800" width="300" height="80" rx="2"/>
+        <text class="label on-blue" x="574" y="832" text-anchor="middle">SES</text>
+        <text class="small on-blue" x="574" y="856" text-anchor="middle">Sends it back to that inbox</text>
+      </svg>
+      <figcaption>Read down the white column. Each blue box is the Amazon piece that does that step. Cloudflare is dashed because it only holds the domain name.</figcaption>
+    </figure>
+
+    <h2>Inside a grade</h2>
+    <p>This is the white box above, opened up. Ten graded tries are allowed in a UTC day. On the next one we say the cap is hit, and we do not start a room. If everyone waiting is already at the cap, the door stays shut.</p>
+    <p>Each zip gets its own room on that private network. The room cannot reach the public internet. We place the model key in the room. The student never receives it. The room runs for three minutes, then closes. The door is shared by the whole batch and deleted at the end, which stops the hourly charge.</p>
+    <p>The model does not decide the grade. A checker we wrote does. It runs the program against five tickets the student has not seen. Four of the five must pass. Our code writes the first line of the email: Pass, Fail, or Not graded. The model writes the explanation, and only on a pass or a fail.</p>
+
+    <figure class="diagram">
+      <svg class="arch" viewBox="0 0 740 1124" role="img" aria-labelledby="gradeTitle gradeDesc">
+        <title id="gradeTitle">Inside a grade</title>
+        <desc id="gradeDesc">A drill-down of grading. Letters under the daily cap wait. A VPC endpoint, one interface endpoint in one availability zone, opens for the batch. Code Interpreter runs each zip in a new room for three minutes, with no public internet. Secrets Manager supplies the key. Bedrock allows only Claude Sonnet 4.6. Our checker, which is not Amazon, marks four of five hidden tickets. Code writes Pass, Fail, or Not graded. The endpoint is deleted. If the availability zone fails, the door is deleted and the batch retries up to three times. After that, unfinished letters are not graded.</desc>
+        <defs>
+          <marker id="ah-ink-2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#17262c"/>
+          </marker>
+          <marker id="ah-aws-2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#1d4f73"/>
+          </marker>
+          <marker id="ah-fail" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#9f2d2d"/>
+          </marker>
+        </defs>
+
+        <rect class="node" x="16" y="16" width="348" height="100" rx="2"/>
+        <text class="label" x="190" y="48" text-anchor="middle">Letters under today’s cap</text>
+        <text class="small" x="190" y="72" text-anchor="middle">Ten graded tries a day. Then we stop.</text>
+        <text class="small" x="190" y="94" text-anchor="middle">At the cap, no room is started.</text>
+
+        <line class="arrow" x1="364" y1="66" x2="416" y2="66" marker-end="url(#ah-ink-2)"/>
+        <rect class="node-other" x="424" y="16" width="300" height="100" rx="2"/>
+        <text class="label" x="574" y="52" text-anchor="middle">Our rule</text>
+        <text class="small" x="574" y="76" text-anchor="middle">Not an Amazon limit.</text>
+        <text class="small" x="574" y="96" text-anchor="middle">A capped batch never opens the door.</text>
+
+        <line class="arrow" x1="190" y1="116" x2="190" y2="144" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="148" width="348" height="108" rx="2"/>
+        <text class="label" x="190" y="182" text-anchor="middle">Open one private door</text>
+        <text class="small" x="190" y="206" text-anchor="middle">This takes a few minutes.</text>
+        <text class="small" x="190" y="228" text-anchor="middle">New letters join this batch.</text>
+
+        <line class="arrow-aws" x1="364" y1="202" x2="416" y2="202" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="148" width="300" height="108" rx="2"/>
+        <text class="label on-blue" x="574" y="182" text-anchor="middle">VPC endpoint</text>
+        <text class="small on-blue" x="574" y="206" text-anchor="middle">Interface endpoint, one zone</text>
+        <text class="small on-blue" x="574" y="228" text-anchor="middle">Private DNS. This batch only.</text>
+
+        <line class="arrow" x1="190" y1="256" x2="190" y2="284" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="288" width="348" height="136" rx="2"/>
+        <text class="label" x="190" y="322" text-anchor="middle">A new room for each zip</text>
+        <text class="small" x="190" y="348" text-anchor="middle">No public internet.</text>
+        <text class="small" x="190" y="370" text-anchor="middle">We place the key inside.</text>
+        <text class="small" x="190" y="392" text-anchor="middle">Three minutes, then the room closes.</text>
+
+        <line class="arrow-aws" x1="364" y1="320" x2="416" y2="320" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="288" width="300" height="64" rx="2"/>
+        <text class="label on-blue" x="574" y="314" text-anchor="middle">Code Interpreter</text>
+        <text class="small on-blue" x="574" y="334" text-anchor="middle">One new room per zip</text>
+
+        <line class="arrow-aws" x1="364" y1="392" x2="416" y2="392" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="360" width="300" height="64" rx="2"/>
+        <text class="label on-blue" x="574" y="386" text-anchor="middle">Secrets Manager</text>
+        <text class="small on-blue" x="574" y="406" text-anchor="middle">The key stays in the room</text>
+
+        <line class="arrow" x1="190" y1="424" x2="190" y2="452" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="456" width="348" height="96" rx="2"/>
+        <text class="label" x="190" y="490" text-anchor="middle">Five hidden tickets</text>
+        <text class="small" x="190" y="514" text-anchor="middle">The program reads one and answers.</text>
+        <text class="small" x="190" y="534" text-anchor="middle">The student never sees these five.</text>
+
+        <line class="arrow-aws" x1="364" y1="504" x2="416" y2="504" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="456" width="300" height="96" rx="2"/>
+        <text class="label on-blue" x="574" y="488" text-anchor="middle">Bedrock</text>
+        <text class="small on-blue" x="574" y="512" text-anchor="middle">Claude Sonnet 4.6</text>
+        <text class="small on-blue" x="574" y="532" text-anchor="middle">The only model the door allows</text>
+
+        <line class="arrow" x1="190" y1="552" x2="190" y2="580" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="584" width="348" height="108" rx="2"/>
+        <text class="label" x="190" y="618" text-anchor="middle">Our checker marks the work</text>
+        <text class="small" x="190" y="642" text-anchor="middle">Four of the five must pass.</text>
+        <text class="small" x="190" y="664" text-anchor="middle">The model does not grade.</text>
+
+        <line class="arrow" x1="364" y1="638" x2="416" y2="638" marker-end="url(#ah-ink-2)"/>
+        <rect class="node-other" x="424" y="584" width="300" height="108" rx="2"/>
+        <text class="label" x="574" y="622" text-anchor="middle">Not Amazon</text>
+        <text class="small" x="574" y="646" text-anchor="middle">A small program in this repo.</text>
+        <text class="small" x="574" y="668" text-anchor="middle">A clean finish means pass.</text>
+
+        <line class="arrow" x1="190" y1="692" x2="190" y2="720" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="724" width="348" height="100" rx="2"/>
+        <text class="label" x="190" y="758" text-anchor="middle">The first line of the email</text>
+        <text class="small" x="190" y="782" text-anchor="middle">Pass, Fail, or Not graded.</text>
+        <text class="small" x="190" y="802" text-anchor="middle">The model only writes the note.</text>
+
+        <line class="arrow" x1="364" y1="774" x2="416" y2="774" marker-end="url(#ah-ink-2)"/>
+        <rect class="node-other" x="424" y="724" width="300" height="100" rx="2"/>
+        <text class="label" x="574" y="762" text-anchor="middle">Not Amazon</text>
+        <text class="small" x="574" y="786" text-anchor="middle">Our code writes that first line.</text>
+
+        <line class="arrow" x1="190" y1="824" x2="190" y2="852" marker-end="url(#ah-ink-2)"/>
+
+        <rect class="node" x="16" y="856" width="348" height="96" rx="2"/>
+        <text class="label" x="190" y="890" text-anchor="middle">Delete the door</text>
+        <text class="small" x="190" y="914" text-anchor="middle">The charge stops. Replies go out.</text>
+
+        <line class="arrow-aws" x1="364" y1="904" x2="416" y2="904" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="856" width="300" height="96" rx="2"/>
+        <text class="label on-blue" x="574" y="886" text-anchor="middle">VPC endpoint</text>
+        <text class="small on-blue" x="574" y="910" text-anchor="middle">About 1¢ an hour while open</text>
+        <text class="small on-blue" x="574" y="930" text-anchor="middle">About 1¢ per gigabyte through it</text>
+
+        <line class="arrow-fail" x1="190" y1="952" x2="190" y2="980" marker-end="url(#ah-fail)"/>
+
+        <rect class="node" x="16" y="984" width="348" height="124" rx="2"/>
+        <text class="label" x="190" y="1016" text-anchor="middle">If that zone fails</text>
+        <text class="small" x="190" y="1040" text-anchor="middle">Delete the door. Wait, then try again.</text>
+        <text class="small" x="190" y="1062" text-anchor="middle">One minute, then two. Three tries.</text>
+        <text class="small" x="190" y="1084" text-anchor="middle">Unfinished work is not graded.</text>
+
+        <line class="arrow-aws" x1="364" y1="1046" x2="416" y2="1046" marker-end="url(#ah-aws-2)"/>
+        <rect class="node-aws" x="424" y="984" width="300" height="124" rx="2"/>
+        <text class="label on-blue" x="574" y="1018" text-anchor="middle">Availability zone</text>
+        <text class="small on-blue" x="574" y="1042" text-anchor="middle">This version rents one zone.</text>
+        <text class="small on-blue" x="574" y="1064" text-anchor="middle">After three tries, we stop.</text>
+        <text class="small on-blue" x="574" y="1086" text-anchor="middle">A finished grade still counts.</text>
+      </svg>
+      <figcaption>The dashed red step is the failure path. It can happen while the door is opening or while a room is running. The door is deleted either way.</figcaption>
+    </figure>
+
+    <p>A grade that already finished still counts, and it uses one of the ten tries. A timeout, a model error, or a crashed checker is not a fail, and it does not use a try. A second zip from a student whose room is already running is set aside. The reply asks them to send again after the result.</p>
+    <p>After the third failed try, unfinished letters are not graded and do not use a try. The door is still deleted.</p>
+
+    <h2>Pass and fail</h2>
+    <div class="split">
+      <div class="rule pass">
+        <strong>Pass</strong>
+        <p>The checker finishes cleanly. The next problem rides along in the same reply, and the student moves forward one step.</p>
+      </div>
+      <div class="rule fail">
+        <strong>Fail</strong>
+        <p>Anything else the checker returns. The reply includes the checker’s notes, up to 8 KB. The same problem stays open.</p>
+      </div>
+    </div>
+    <p>Each attempt stands on its own. The previous zip is thrown away. After problem 3, the mail says the sequence is finished.</p>
+
+    <h2>The three problems</h2>
+    <p>All three are ticket triage. Each one adds a field. The tickets used for grading stay hidden. The email includes the instructions, the shape of the answer, and one sample ticket.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>The program must return</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01 Classify</td>
+          <td>The ticket id, and a label: bug, billing, access, or other.</td>
+        </tr>
+        <tr>
+          <td>02 Route</td>
+          <td>Those, plus a priority (P1, P2, P3) and a queue. Bugs go to engineering, billing goes to billing, and the rest go to support.</td>
+        </tr>
+        <tr>
+          <td>03 Reply</td>
+          <td>Those, plus a short customer reply. It must contain the ticket id, stay under 80 words, and say “refund” only when the ticket does.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Billing means charges, invoices, refunds, or payment. Access means login, password, or permissions. Bug means the product is broken. Everything else is other. P1 means work is blocked or money is wrong. P3 is a how-to. P2 is the rest.</p>
+    <p>The label, priority, and queue must match the answer key. The customer reply is checked against those rules, not against a canned paragraph. The program reads the ticket as JSON and prints one JSON object. It uses the Python standard library, calls the model with no randomness, and reads the key, the model name, and the region from the room around it.</p>
+
+    <h2>Letters that are not a grade</h2>
+    <ul>
+      <li>No zip: we send the current problem again.</li>
+      <li>More than one attachment: we ask for a single zip.</li>
+      <li>The same letter arrives twice: we grade it once and reply once.</li>
+      <li>The grader times out, the model errors, or the checker crashes: we say it was not graded. That is not a fail, and it does not use a daily try.</li>
+      <li>The zone fails: we delete the door, pause, and try again, up to three times. After that, unfinished letters are not graded and do not use a daily try. A pass or a fail that already finished still counts.</li>
+      <li>After 10 graded tries in a UTC day: we stop and say the cap is hit. No room is started. A batch of only capped students does not open the door.</li>
+      <li>Mail after the last problem: we say the sequence is complete, and we do not grade.</li>
+    </ul>
+
+    <h2>The names on the blue boxes</h2>
+    <p>Skip this if the pictures were enough. It is the same system, with the names an engineer would type. Everything runs in <strong>us-east-1</strong>. DNS for <strong>theaiguru.dev</strong> stays at Cloudflare, and Cloudflare Email Routing and Email Sending stay off so they do not take the same MX and SPF records. The MX record points at SES. Bounces use <strong>bounce.theaiguru.dev</strong>.</p>
+    <ul>
+      <li>Problems live in this repo as folders: instructions, a rubric for the reply writer, a checker, and five hidden tickets.</li>
+      <li>The student card is a DynamoDB row: email, current problem, whether a grade is in flight, graded tries for the UTC day, last result, and message ids already handled.</li>
+      <li>The long-term key for the room sits in Secrets Manager. The model is Claude Sonnet 4.6 (<span lang="en">us.anthropic.claude-sonnet-4-6</span>). The program calls it with temperature 0.</li>
+      <li>The grading room is Code Interpreter on a private network, with no NAT gateway and no public internet.</li>
+      <li>The door is one interface VPC endpoint, in one subnet, with private DNS. The room’s permission may call this Sonnet profile and the same foundation model in us-east-1, us-east-2, and us-west-2, because the profile routes across those three. The door itself accepts only the profile and the us-east-1 model, and only from this account. The calls are invoke and converse, including the streaming forms.</li>
+      <li>Each zip gets a new room, limited to 3 minutes, then closed. The door is shared by the batch and deleted at the end.</li>
+      <li>While the door exists, AWS charges $0.01 per hour for that one zone. A door left up for a month is about $7.30. A short batch is a fraction of a cent, plus $0.01 per gigabyte through the door.</li>
+    </ul>
+    <p>Until SES production access is granted, a reply can go only to a verified address, the SES mailbox simulator, or an address at a domain this account has already verified.</p>
+
+    <h2>What this version leaves out</h2>
+    <ul>
+      <li>Slack, and any other channel besides email.</li>
+      <li>A website, a signup form, and an admin screen for uploading problems.</li>
+      <li>A model that picks a harder problem by reading the code. The order is fixed.</li>
+      <li>More skills after ticket triage. Those are more folders, added after one student finishes this ladder.</li>
+      <li>A second availability zone. Add it when real students are on the ladder. Until then a dead zone pauses grading, and after three tries the letter is not graded.</li>
+      <li>Leaving the door open between batches.</li>
+      <li>Sending or receiving the mail through Cloudflare. Cloudflare is DNS only.</li>
+    </ul>
+
+    <footer>
+      <p>This is the tracer: prove the loop once, from the first email through a fail, a resend, a pass, and the next problem.</p>
+    </footer>
+  </article>
+</body>
+</html>

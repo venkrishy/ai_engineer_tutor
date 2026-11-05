@@ -1,0 +1,1 @@
+The labels are working, and the support lead is delighted. Now the real pressure: an outage and a double charge cannot wait in the same line as a how-to question. Extend your program so each ticket also gets a priority and is sent to the team that should handle it.

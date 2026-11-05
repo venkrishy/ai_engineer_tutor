@@ -1,0 +1,114 @@
+# Mail tutor
+
+A tutor that reaches a student only by email. The student receives the first level of an assignment, sends code back, and gets a result on that same thread.
+
+## People
+
+**Student**:
+A person identified by the email address they write from. A student has at most one open level.
+_Avoid_: user, account
+
+**Student card**:
+The stored facts for one student: email, open assignment, open level, whether a grade is in flight, graded tries for the UTC day, last result, and letters already handled.
+_Avoid_: profile, account
+
+**In flight**:
+A student whose submission is being graded in a room.
+_Avoid_: locked, busy
+
+**Finished**:
+A student who has passed the last level of their assignment.
+_Avoid_: complete, graduated
+
+## Mail
+
+**Letter**:
+One inbound email from a student, identified by its message id.
+_Avoid_: attempt
+
+**Zip**:
+The code archive attached to a letter.
+_Avoid_: attempt
+
+**Submission**:
+A letter whose zip has been accepted for grading. A student has at most one in a batch.
+_Avoid_: attempt
+
+**Reply**:
+The email the tutor sends on the same thread as a letter.
+_Avoid_: response, notification
+
+## The work
+
+**Assignment**:
+One course assignment the tutor gives a student, such as triaging tickets. An assignment is a ladder of levels. The email that opens an assignment holds the goal of its first level and links to its pages.
+_Avoid_: problem, exercise
+
+**Level**:
+One rung of an assignment's ladder, such as Classify, Route, or Reply. A student builds one level, sends the code back, and moves up only on a pass.
+_Avoid_: problem, step, stage
+
+**Ladder**:
+The ordered levels of one assignment, walked one open at a time.
+_Avoid_: sequence, course, track
+
+**Assignment page** and **Hints and help page**:
+The two static pages of a level, published by GitHub Pages and linked from the email. The Assignment page holds the goal, samples, rules, how to test, and the zip layout. The Hints and help page holds the hints and the one-shot prompt.
+_Avoid_: lesson, guide
+
+**Hint**:
+A nudge sent with a Fail. Each failed try on a level gets the next hint, then a pointer to the prompt. A hint never gives an answer.
+_Avoid_: clue, answer
+
+**Checker**:
+The tutor's judge of a submission.
+_Avoid_: model
+
+**Model**:
+The language model that writes the note. The student's code may call it.
+_Avoid_: checker
+
+## Grading
+
+**Batch**:
+The submissions graded together.
+
+**Door**:
+The private opening that exists only while a batch is grading.
+_Avoid_: endpoint
+
+**Room**:
+The private place where one submission is graded.
+_Avoid_: sandbox
+
+**Graded try**:
+One pass or one fail for a student on a UTC day.
+_Avoid_: attempt
+
+**Daily cap**:
+Five graded tries for one student on one UTC day.
+_Avoid_: quota
+
+**Pass**:
+The checker's acceptance of a submission.
+_Avoid_: success
+
+**Fail**:
+The checker's rejection of a submission.
+_Avoid_: error
+
+**Not graded**:
+A submission the tutor did not finish grading.
+_Avoid_: fail, cap hit
+
+**Cap hit**:
+The result on a letter that was not accepted because the student has reached the daily cap.
+_Avoid_: not graded
+
+**Note**:
+The explanation the model writes on a pass or a fail.
+_Avoid_: feedback, comment, findings
+
+**Findings**:
+What the checker returns when it rejects a submission.
+_Avoid_: note, explanation
