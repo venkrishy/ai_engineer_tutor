@@ -67,7 +67,13 @@ The last level asks for a customer reply, and the student submits `reply.zip`.
 
 <p align="center"><img src="docs/flow/08-student-submits-reply-zip.png" alt="The student replies with reply.zip" width="520"></p>
 
-A pass on the last level sends a celebration email.
+A pass on the last level sends the result first.
+
+<p align="center"><img src="docs/flow/09-pass-level-3.png" alt="Pass on Level 3, with all levels cleared" width="420"></p>
+
+Then a separate celebration email arrives, with ideas for what to do next.
+
+<p align="center"><img src="docs/flow/10-all-levels-cleared.png" alt="The celebration email: you have cleared every level" width="420"></p>
 
 > **Earlier look:** the first version of the welcome email was a single plain message. See [docs/flow/earlier-welcome-email-v1.png](docs/flow/earlier-welcome-email-v1.png) for how far the design has come.
 
