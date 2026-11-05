@@ -51,6 +51,16 @@ No app, no login, no website to learn. The whole course is email. Follow the scr
 
 <p align="center"><img src="docs/flow/04-student-submits-zip.png" alt="The student replies with classify.zip attached" width="520"></p>
 
+### 4b. If the program fails
+
+**What happens:** a wrong zip is graded the same way, and the reply starts with **Fail**. The student stays on the same level and keeps the thread.
+
+**Look for:** the note names a likely cause without giving the answer, the result line says how many hidden tickets passed (here 1 of 5, with 4 needed), and the status box shows one try used. **Hint 1** points to the Hints and help page. A second fail gives a stronger hint.
+
+<p align="center"><img src="docs/flow/15-fail-with-hint.png" alt="A Fail reply with a note and Hint 1" width="420"></p>
+
+*The per-ticket findings are hidden in this screenshot because the repository is public.*
+
 ### 5. The tutor grades and opens the next level
 
 **What happens:** the zip runs in a sandbox against hidden tickets. The reply starts with **Pass**, **Fail** or **Not graded**, adds a short note written by an LLM, and, on a pass, includes the next level.
